@@ -15,6 +15,8 @@
   --mal: #ef4444;
   --j0: #ff6b4a;
   --j1: #38bdf8;
+  --j2: #a3e635;
+  --j3: #c084fc;
   --radio: 16px;
   --fuente-titulo: "Bebas Neue", "Impact", sans-serif;
   --fuente: "Outfit", "Segoe UI", system-ui, sans-serif;
@@ -59,6 +61,9 @@ button { font-family: inherit; touch-action: manipulation; }
 .pantalla { display: none; padding: 24px 16px; max-width: 1180px; margin: 0 auto; }
 .pantalla.activa { display: block; animation: aparecer .35s ease; }
 @keyframes aparecer { from { opacity: 0; transform: translateY(8px); } }
+
+#juego.activa { animation-name: fundido; }
+@keyframes fundido { from { opacity: 0; } }
 
 #inicio, #final { text-align: center; padding-top: max(48px, 6vh); padding-bottom: 48px; }
 
@@ -129,8 +134,32 @@ input, select {
 input:focus, select:focus { border-color: var(--oro); box-shadow: 0 0 0 3px rgba(247,201,72,.25); }
 input::placeholder { color: #ffffff55; }
 .nombres input { font-size: 1.1rem; padding: 12px 14px; text-align: center; width: 100%; }
-#nombre1 { border-left: 4px solid var(--j0); }
-#nombre2 { border-left: 4px solid var(--j1); }
+#nombresLocal label { flex: 1 1 calc(50% - 12px); }
+#nombresLocal input { border-left: 4px solid var(--c); }
+
+.cantidad-jugadores {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px;
+  font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--texto-suave);
+}
+.selector { display: flex; background: rgba(0,0,0,.35); border: 1px solid var(--vidrio-borde); border-radius: 12px; padding: 3px; }
+.selector button {
+  width: 48px; height: 38px; border: none; border-radius: 9px; cursor: pointer;
+  background: transparent; color: var(--texto-suave);
+  font-family: var(--fuente-titulo); font-size: 1.4rem;
+  transition: background .2s, color .2s;
+}
+.selector button.activo { background: var(--oro); color: #2a1d00; }
+
+.lista-sala { list-style: none; padding: 0; margin: 4px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left; }
+.lista-sala li {
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  padding: 8px 10px; border-radius: 12px; font-weight: 600;
+  background: rgba(0,0,0,.25); border: 1px solid var(--vidrio-borde);
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.lista-sala li small { color: var(--texto-suave); font-weight: 400; font-size: .75rem; }
+.lista-sala li.vacio { justify-content: center; color: #ffffff40; border-style: dashed; font-weight: 400; }
+.lista-sala .avatar { width: 28px; height: 28px; font-size: 1rem; }
 
 .opciones-juego {
   display: flex; flex-direction: column; gap: 10px; text-align: left;
@@ -228,7 +257,13 @@ input::placeholder { color: #ffffff55; }
   padding-top: 16px;
   padding-bottom: 16px;
 }
-.marcador { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; margin-bottom: 16px; }
+.marcador { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.jugadores { display: grid; grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr)); gap: 10px; }
+.jugadores[data-n="3"] { --n: 3; }
+.jugadores[data-n="4"] { --n: 4; }
+.barra-turno { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 34px; }
+.tu-turno { color: var(--oro); font-size: 1.05rem; animation: latido-texto 1.2s ease-in-out infinite; display: inline-block; }
+@keyframes latido-texto { 50% { transform: scale(1.06); } }
 .jugador {
   display: flex; align-items: center; gap: 12px;
   padding: 10px 16px;
@@ -239,16 +274,15 @@ input::placeholder { color: #ffffff55; }
   transition: box-shadow .3s, border-color .3s, transform .3s;
   min-width: 0;
 }
-#j1 { flex-direction: row-reverse; text-align: right; }
 .avatar {
   flex-shrink: 0;
   width: 46px; height: 46px; border-radius: 50%;
   display: grid; place-items: center;
   font-family: var(--fuente-titulo); font-size: 1.6rem; color: #fff;
   box-shadow: inset 0 -4px 0 rgba(0,0,0,.25);
+  background: var(--c);
+  text-shadow: 0 1px 2px rgba(0,0,0,.35);
 }
-#j0 .avatar { background: linear-gradient(135deg, #ff9478, var(--j0)); }
-#j1 .avatar { background: linear-gradient(135deg, #7dd3fc, var(--j1)); }
 .datos { display: flex; flex-direction: column; min-width: 0; }
 .jugador .nombre {
   font-weight: 600; font-size: .95rem; color: var(--texto-suave);
@@ -257,13 +291,10 @@ input::placeholder { color: #ffffff55; }
 .jugador .puntos { font-family: var(--fuente-titulo); font-size: 2.4rem; line-height: 1; letter-spacing: 1px; }
 .puntos.salto { animation: salto .6s ease; }
 @keyframes salto { 30% { transform: scale(1.35); color: var(--oro); } }
-#j0.activo { border-color: var(--j0); box-shadow: 0 0 0 1px var(--j0), 0 0 28px rgba(255,107,74,.45); }
-#j1.activo { border-color: var(--j1); box-shadow: 0 0 0 1px var(--j1), 0 0 28px rgba(56,189,248,.45); }
-.centro { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.turno {
-  font-size: .8rem; text-align: center; text-transform: uppercase; letter-spacing: 1px; color: var(--texto-suave);
-}
-.turno b { display: block; font-size: 1.05rem; color: var(--texto); text-transform: none; letter-spacing: 0; }
+.jugador.activo { border-color: var(--c); box-shadow: 0 0 0 1px var(--c), 0 0 26px color-mix(in srgb, var(--c) 45%, transparent); }
+.jugador.fuera { opacity: .35; filter: grayscale(.8); }
+.turno { font-size: .95rem; text-align: center; color: var(--texto-suave); }
+.turno b { font-size: 1.05rem; }
 .turno small, .quien small { opacity: .75; font-weight: 400; text-transform: none; }
 
 /* ===== Tablero ===== */
@@ -333,8 +364,11 @@ input::placeholder { color: #ffffff55; }
   padding: 4px;
   overflow-wrap: anywhere;
 }
-.celda.usada.g0 { color: var(--j0); background: rgba(255,107,74,.13); box-shadow: inset 0 0 0 1px rgba(255,107,74,.45); }
-.celda.usada.g1 { color: var(--j1); background: rgba(56,189,248,.13); box-shadow: inset 0 0 0 1px rgba(56,189,248,.45); }
+.celda.usada.ganada {
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 13%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent);
+}
 .celda.usada.nadie { color: #ffffff40; }
 
 /* ===== Modal de pregunta ===== */
@@ -429,10 +463,21 @@ input::placeholder { color: #ffffff55; }
 .trofeo { font-size: 90px; animation: flotar 2.4s ease-in-out infinite; filter: drop-shadow(0 10px 30px rgba(247,201,72,.5)); }
 @keyframes flotar { 50% { transform: translateY(-12px) rotate(-4deg); } }
 #final h1 { font-size: clamp(2.6rem, 10vw, 5rem); margin: 8px 0; }
-#resumen {
-  font-size: 1.15rem; color: var(--texto); background: var(--vidrio); border: 1px solid var(--vidrio-borde);
-  display: inline-block; padding: 12px 22px; border-radius: 14px; margin-bottom: 24px;
+.ranking { list-style: none; padding: 0; margin: 18px auto 24px; max-width: 420px; display: flex; flex-direction: column; gap: 8px; }
+.ranking li {
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px; text-align: left;
+  background: var(--vidrio); border: 1px solid var(--vidrio-borde); border-left: 4px solid var(--c);
+  border-radius: 14px; backdrop-filter: blur(8px); animation: aparecer .4s ease backwards;
 }
+.ranking li:nth-child(2) { animation-delay: .1s; }
+.ranking li:nth-child(3) { animation-delay: .2s; }
+.ranking li:nth-child(4) { animation-delay: .3s; }
+.ranking li:first-child { background: rgba(247,201,72,.12); border-color: rgba(247,201,72,.5); border-left-color: var(--c); }
+.ranking .medalla { font-size: 1.5rem; width: 32px; text-align: center; font-family: var(--fuente-titulo); color: var(--texto-suave); }
+.ranking .avatar { width: 34px; height: 34px; font-size: 1.2rem; }
+.ranking .rk-nombre { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ranking .rk-nombre small { color: var(--texto-suave); font-weight: 400; }
+.ranking b { font-family: var(--fuente-titulo); font-size: 1.8rem; font-weight: 400; color: var(--oro); }
 
 /* ===== Celular ===== */
 @media (max-width: 640px) {
@@ -443,12 +488,20 @@ input::placeholder { color: #ffffff55; }
 
   #juego.activa { padding-top: 10px; padding-bottom: 10px; }
   .marcador { gap: 6px; margin-bottom: 10px; }
+  .jugadores { gap: 5px; }
   .jugador { padding: 6px 8px; gap: 8px; border-radius: 12px; }
-  .avatar { width: 34px; height: 34px; font-size: 1.2rem; }
-  .jugador .nombre { font-size: .75rem; }
-  .jugador .puntos { font-size: 1.7rem; }
-  .turno { font-size: .65rem; }
-  .turno b { font-size: .85rem; }
+  .jugador .avatar { width: 30px; height: 30px; font-size: 1.1rem; }
+  .jugador .nombre { font-size: .72rem; }
+  .jugador .puntos { font-size: 1.6rem; }
+  .jugadores[data-n="3"] .jugador, .jugadores[data-n="4"] .jugador { flex-direction: column; gap: 2px; padding: 6px 4px; text-align: center; }
+  .jugadores[data-n="3"] .datos, .jugadores[data-n="4"] .datos { align-items: center; width: 100%; }
+  .jugadores[data-n="4"] .jugador .avatar { width: 24px; height: 24px; font-size: .9rem; }
+  .jugadores[data-n="4"] .jugador .nombre { font-size: .65rem; max-width: 100%; }
+  .jugadores[data-n="4"] .jugador .puntos { font-size: 1.35rem; }
+  .barra-turno { min-height: 30px; }
+  .turno { font-size: .85rem; }
+  .turno b { font-size: .95rem; }
+  #nombresLocal label { flex-basis: 100%; }
   .btn-sonido { width: 34px; height: 34px; font-size: .95rem; }
 
   .tablero { gap: 5px; grid-template-rows: auto repeat(5, minmax(48px, 1fr)); }
@@ -470,16 +523,19 @@ input::placeholder { color: #ffffff55; }
 @media (max-height: 500px) and (orientation: landscape) {
   #juego.activa { padding-top: 6px; padding-bottom: 6px; }
   .marcador { margin-bottom: 6px; }
-  .jugador { padding: 4px 10px; }
-  .avatar { width: 30px; height: 30px; font-size: 1.1rem; }
-  .jugador .puntos { font-size: 1.5rem; }
+  .marcador { flex-direction: row; align-items: center; gap: 8px; }
+  .jugadores { flex: 1; }
+  .jugador { padding: 4px 10px; flex-direction: row !important; text-align: left !important; }
+  .jugador .avatar { width: 26px; height: 26px; font-size: 1rem; }
+  .jugador .datos { align-items: flex-start !important; }
+  .jugador .puntos { font-size: 1.4rem; }
+  .barra-turno { flex-direction: column; gap: 4px; max-width: 110px; }
   .tablero { gap: 4px; grid-template-rows: auto repeat(5, minmax(30px, 1fr)); max-height: none; }
   .cat { min-height: 0; padding: 4px; flex-direction: row; gap: 6px; }
   .cat .ico { font-size: 1rem; }
   .cat .nom { display: none; }
   .cat .nom-corto { display: block; font-size: .65rem; font-weight: 800; text-transform: uppercase; line-height: 1.1; hyphens: manual; }
-  .centro { flex-direction: row; }
-  .turno { font-size: .65rem; }
+  .turno { font-size: .7rem; }
   .btn-sonido { width: 30px; height: 30px; font-size: .85rem; }
   .celda { font-size: 1.3rem; }
   .opciones { grid-template-columns: 1fr 1fr; }

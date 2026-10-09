@@ -1,11 +1,11 @@
-// Conexión online entre 2 dispositivos usando PeerJS (WebRTC, de igual a igual).
-// El anfitrión crea una sala con un código; el invitado se conecta con ese código.
+// Conexión online entre dispositivos usando PeerJS (WebRTC, de igual a igual).
+// El anfitrión crea una sala con un código y recibe a los invitados; cada invitado
+// se conecta solo con el anfitrión, que reparte los mensajes a todos.
 const Red = (() => {
   const PREFIJO = "pregfut-";
   const LETRAS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sin O/0/I/1 para que no se confundan
   let peer = null;
-  let conn = null;
-  let ultimoMensaje = 0;
+  const conexiones = new Map(); // id del otro → { conn, ultimo }
   let latido = null;
   const handlers = {};
 
@@ -27,41 +27,41 @@ const Red = (() => {
     }
   }
 
-  function configurar(c) {
-    conn = c;
+  // id: cómo identificamos al otro lado ("host" para el invitado, el peer id para el anfitrión)
+  function configurar(c, id) {
     c.on("open", () => {
-      ultimoMensaje = Date.now();
+      conexiones.set(id, { conn: c, ultimo: Date.now() });
       iniciarLatido();
-      emitir("conectado");
+      emitir("conectado", id);
     });
     c.on("data", (d) => {
-      ultimoMensaje = Date.now();
+      const info = conexiones.get(id);
+      if (info) info.ultimo = Date.now();
       if (d && d.tipo === "ping") return;
-      if (d && d.tipo === "chau") return perderConexion(c);
-      emitir("mensaje", d);
+      if (d && d.tipo === "chau") return perder(id, c);
+      emitir("mensaje", d, id);
     });
-    c.on("close", () => perderConexion(c));
-    c.on("error", () => perderConexion(c));
+    c.on("close", () => perder(id, c));
+    c.on("error", () => perder(id, c));
   }
 
-  function perderConexion(c) {
-    if (c !== conn) return;
-    conn = null;
-    clearInterval(latido);
-    emitir("desconectado");
+  function perder(id, c) {
+    const info = conexiones.get(id);
+    if (!info || info.conn !== c) return;
+    conexiones.delete(id);
+    try { c.close(); } catch (e) {}
+    emitir("desconectado", id);
   }
 
-  // Ping periódico: si el otro no responde en un rato, se considera desconectado.
+  // Ping periódico: si alguien no responde en un rato, se considera desconectado.
   function iniciarLatido() {
-    clearInterval(latido);
+    if (latido) return;
     latido = setInterval(() => {
-      if (!conn) return;
-      enviar({ tipo: "ping" });
-      if (Date.now() - ultimoMensaje > 20000) {
-        const c = conn;
-        perderConexion(c);
-        c.close();
-      }
+      const ahora = Date.now();
+      conexiones.forEach((info, id) => {
+        if (info.conn.open) info.conn.send({ tipo: "ping" });
+        if (ahora - info.ultimo > 20000) perder(id, info.conn);
+      });
     }, 3000);
   }
 
@@ -71,21 +71,14 @@ const Red = (() => {
       let abierto = false;
       peer = new Peer(PREFIJO + codigo);
       peer.on("open", () => { abierto = true; resolve(codigo); });
-      peer.on("connection", (c) => {
-        if (conn) {
-          // Ya hay un rival: avisar que la sala está llena
-          c.on("open", () => { c.send({ tipo: "lleno" }); setTimeout(() => c.close(), 500); });
-          return;
-        }
-        configurar(c);
-      });
+      peer.on("connection", (c) => configurar(c, c.peer));
       peer.on("error", (e) => {
         if (!abierto && e.type === "unavailable-id") {
           peer.destroy();
           crearSala().then(resolve, reject); // código repetido: probar otro
         } else if (!abierto) {
           reject(new Error(mensajeError(e)));
-        } else {
+        } else if (e.type !== "peer-unavailable") {
           emitir("error", mensajeError(e));
         }
       });
@@ -98,7 +91,7 @@ const Red = (() => {
       peer = new Peer();
       peer.on("open", () => {
         const c = peer.connect(PREFIJO + codigo.trim().toUpperCase(), { reliable: true });
-        configurar(c);
+        configurar(c, "host");
         c.on("open", () => { conectado = true; resolve(); });
       });
       peer.on("error", (e) => {
@@ -111,21 +104,34 @@ const Red = (() => {
     });
   }
 
-  function enviar(mensaje) {
-    if (conn && conn.open) conn.send(mensaje);
+  // Sin "para": se manda a todos.
+  function enviar(mensaje, para) {
+    conexiones.forEach((info, id) => {
+      if ((para === undefined || para === id) && info.conn.open) info.conn.send(mensaje);
+    });
+  }
+
+  // Corta a un invitado (por ejemplo, si la sala está llena).
+  function expulsar(id, mensaje) {
+    const info = conexiones.get(id);
+    if (!info) return;
+    if (mensaje) enviar(mensaje, id);
+    conexiones.delete(id);
+    setTimeout(() => info.conn.close(), 500);
   }
 
   function cerrar() {
-    clearInterval(latido);
     enviar({ tipo: "chau" });
-    const c = conn;
-    conn = null;
-    if (c) c.close();
+    clearInterval(latido);
+    latido = null;
+    const todas = [...conexiones.values()];
+    conexiones.clear();
+    todas.forEach((info) => info.conn.close());
     if (peer) peer.destroy();
     peer = null;
   }
 
-  // Al cerrar o salir de la página, avisar al rival para que no tenga que esperar el ping.
+  // Al cerrar o salir de la página, avisar para que los demás no tengan que esperar el ping.
   window.addEventListener("pagehide", () => enviar({ tipo: "chau" }));
 
   return {
@@ -133,7 +139,9 @@ const Red = (() => {
     crearSala,
     unirse,
     enviar,
+    expulsar,
     cerrar,
-    get conectado() { return !!(conn && conn.open); },
+    get miId() { return peer ? peer.id : null; },
+    get cantidad() { return conexiones.size; },
   };
 })();

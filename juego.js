@@ -1,24 +1,27 @@
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
-// En modo online el anfitrión es el "dueño" del estado: aplica las reglas y le manda
-// una copia al invitado. El invitado solo envía sus acciones (elegir, responder, continuar).
+const MAX_JUGADORES = 4;
+
+// En modo online el anfitrión es el "dueño" del estado: aplica las reglas y les manda
+// una copia a los invitados. Los invitados solo envían sus acciones (elegir, responder, continuar).
 const estado = {
   modo: "local",     // "local" | "host" | "invitado"
-  yo: null,          // online: 0 = anfitrión, 1 = invitado
+  yo: null,          // online: mi índice en jugadores
   fase: "inicio",    // "inicio" | "tablero" | "final"
-  jugadores: [{ nombre: "", puntos: 0 }, { nombre: "", puntos: 0 }],
+  jugadores: [],     // [{ id, nombre, puntos, conectado }]
   turno: 0,          // jugador que elige la próxima casilla
   categorias: [],    // categorías sorteadas para esta partida
   tablero: [],       // tablero[cat][fila] = { valor, pregunta, usada, ganador }
   config: { rebote: true, restar: false, tiempo: 30, cantidad: 6 },
   actual: null,      // pregunta en curso
   vistas: new Set(), // preguntas ya jugadas (para no repetir en la revancha)
-  rival: null,       // nombre del invitado (solo anfitrión)
+  sala: [],          // invitados en la sala de espera (solo anfitrión): [{ id, nombre }]
 };
 
 const esAutoridad = () => estado.modo !== "invitado";
 const puedeActuar = (j) => estado.modo === "local" || estado.yo === j;
+const color = (j) => `var(--j${j})`;
 
 function mezclar(arr) {
   const a = [...arr];
@@ -29,10 +32,21 @@ function mezclar(arr) {
   return a;
 }
 
+function escapar(texto) {
+  const d = document.createElement("div");
+  d.textContent = texto;
+  return d.innerHTML;
+}
+
+function inicial(nombre) {
+  return (String(nombre).trim()[0] || "?").toUpperCase();
+}
+
 function guardar(clave, valor) { try { localStorage.setItem(clave, valor); } catch (e) {} }
 function leer(clave) { try { return localStorage.getItem(clave); } catch (e) { return null; } }
 
 function mostrarPantalla(id) {
+  if ($("#" + id).classList.contains("activa")) return; // no reiniciar la animación de entrada
   $$(".pantalla").forEach((p) => p.classList.remove("activa"));
   $("#" + id).classList.add("activa");
 }
@@ -69,17 +83,29 @@ function elegirPregunta(lista) {
   return q;
 }
 
-function nuevaPartida(nombres, config) {
-  estado.jugadores = nombres.map((nombre) => ({ nombre, puntos: 0 }));
+// participantes: [{ id, nombre }]
+function nuevaPartida(participantes, config) {
+  estado.jugadores = participantes.map(({ id, nombre }) => ({ id, nombre, puntos: 0, conectado: true }));
   estado.config = config;
-  estado.turno = Math.random() < 0.5 ? 0 : 1; // sorteo de quién empieza
+  estado.turno = Math.floor(Math.random() * estado.jugadores.length); // sorteo de quién empieza
   estado.categorias = mezclar(CATEGORIAS).slice(0, config.cantidad);
   estado.tablero = estado.categorias.map((cat) =>
     VALORES.map((valor) => ({ valor, pregunta: elegirPregunta(cat.preguntas[valor]), usada: false, ganador: null }))
   );
   estado.actual = null;
   estado.fase = "tablero";
+  if (estado.modo === "host") estado.yo = 0;
   sincronizar("inicio");
+}
+
+// Próximo jugador en la ronda, salteando a los que se desconectaron.
+function siguiente(i) {
+  const n = estado.jugadores.length;
+  for (let k = 1; k <= n; k++) {
+    const j = (i + k) % n;
+    if (estado.jugadores[j].conectado) return j;
+  }
+  return i;
 }
 
 // En cada columna solo se puede elegir la casilla más baja que quede libre.
@@ -114,7 +140,8 @@ function elegir(c, f, quien) {
   sincronizar("click");
 }
 
-function responder(texto, quien) {
+// texto: opción elegida; null = se agotó el tiempo. "motivo" permite cambiar el mensaje del error.
+function responder(texto, quien, motivo) {
   const a = estado.actual;
   if (!a || a.terminada) return;
   if (quien !== null && quien !== a.responde) return;
@@ -134,13 +161,14 @@ function responder(texto, quien) {
   // Respuesta incorrecta o tiempo agotado
   if (texto !== null) a.descartadas.push(texto);
   if (estado.config.restar) jugador.puntos -= valor;
-  const motivo = texto === null ? `⏰ ¡Se le acabó el tiempo a ${jugador.nombre}!` : `❌ Incorrecto, ${jugador.nombre}.`;
+  motivo = motivo || (texto === null ? `⏰ ¡Se le acabó el tiempo a ${jugador.nombre}!` : `❌ Incorrecto, ${jugador.nombre}.`);
   const resta = estado.config.restar ? ` (-${valor})` : "";
 
-  if (estado.config.rebote && !a.esRebote) {
+  const rebote = siguiente(a.responde);
+  if (estado.config.rebote && !a.esRebote && rebote !== a.responde) {
     a.esRebote = true;
-    a.responde = 1 - a.responde;
-    a.mensaje = `${motivo}${resta} ¡Rebote para ${estado.jugadores[a.responde].nombre}!`;
+    a.responde = rebote;
+    a.mensaje = `${motivo}${resta} ¡Rebote para ${estado.jugadores[rebote].nombre}!`;
     iniciarReloj(a);
     return sincronizar("incorrecto");
   }
@@ -154,7 +182,7 @@ function terminarPregunta(sonido) {
   a.terminada = true;
   a.fin = null;
   estado.tablero[a.c][a.f].usada = true;
-  estado.turno = 1 - estado.turno; // el turno de elegir siempre alterna
+  estado.turno = siguiente(estado.turno); // el turno de elegir rota entre todos
   sincronizar(sonido);
 }
 
@@ -181,7 +209,7 @@ function ejecutar(tipo, d, quien) {
 
 // ---------- Sincronización ----------
 
-// Copia del estado que ve el invitado (sin las respuestas correctas pendientes).
+// Copia del estado que ven los invitados (sin las respuestas correctas pendientes).
 function foto() {
   const a = estado.actual;
   return {
@@ -208,6 +236,7 @@ function sincronizar(sonido) {
 
 function aplicarFoto(f, sonido) {
   Object.assign(estado, f);
+  estado.yo = estado.jugadores.findIndex((j) => j.id === Red.miId);
   if (estado.actual) {
     const ms = estado.actual.restanteMs;
     estado.actual.fin = ms === null ? null : Date.now() + ms;
@@ -225,6 +254,7 @@ function renderTodo() {
     return renderFinal();
   }
   mostrarPantalla("juego");
+  renderMarcador();
   renderTablero();
   renderPregunta();
 }
@@ -234,26 +264,33 @@ function nombreConMarca(j) {
   return estado.modo !== "local" && estado.yo === j ? `${n} (vos)` : n;
 }
 
-function renderTablero() {
+let puntosPrevios = [];
+function renderMarcador() {
+  const cont = $("#jugadores");
+  cont.dataset.n = estado.jugadores.length;
+  cont.innerHTML = "";
   estado.jugadores.forEach((j, i) => {
-    const el = $("#j" + i);
-    el.querySelector(".avatar").textContent = (j.nombre.trim()[0] || "?").toUpperCase();
-    el.querySelector(".nombre").textContent = nombreConMarca(i);
-    const pts = el.querySelector(".puntos");
-    if (pts.textContent !== String(j.puntos)) {
-      pts.textContent = j.puntos;
-      pts.classList.remove("salto");
-      void pts.offsetWidth; // reinicia la animación
-      pts.classList.add("salto");
-    }
+    const el = document.createElement("div");
+    el.className = "jugador";
+    el.style.setProperty("--c", color(i));
     el.classList.toggle("activo", estado.turno === i);
+    el.classList.toggle("fuera", !j.conectado);
+    el.innerHTML = `<span class="avatar">${escapar(inicial(j.nombre))}</span>
+      <div class="datos"><span class="nombre">${escapar(nombreConMarca(i))}</span><span class="puntos">${j.puntos}</span></div>`;
+    if (puntosPrevios[i] !== undefined && puntosPrevios[i] !== j.puntos) el.querySelector(".puntos").classList.add("salto");
+    cont.appendChild(el);
   });
-  const miTurno = puedeActuar(estado.turno);
-  const quien = estado.jugadores[estado.turno].nombre;
-  $("#turno").innerHTML = estado.modo === "local" || miTurno
-    ? `Elige:<br><b>${estado.modo === "local" ? quien : "¡Vos!"}</b>`
-    : `Elige:<br><b>${quien}</b><br><small>esperando...</small>`;
+  puntosPrevios = estado.jugadores.map((j) => j.puntos);
 
+  const quien = estado.jugadores[estado.turno];
+  const nombre = `<b style="color:${color(estado.turno)}">${escapar(quien.nombre)}</b>`;
+  $("#turno").innerHTML = estado.modo === "local"
+    ? `Elige ${nombre}`
+    : puedeActuar(estado.turno) ? `<b class="tu-turno">¡Te toca elegir!</b>` : `Elige ${nombre} <small>esperando...</small>`;
+}
+
+function renderTablero() {
+  const miTurno = puedeActuar(estado.turno);
   const tablero = $("#tablero");
   tablero.style.gridTemplateColumns = `repeat(${estado.categorias.length}, 1fr)`;
   tablero.innerHTML = "";
@@ -274,8 +311,15 @@ function renderTablero() {
       const btn = document.createElement("button");
       btn.className = "celda";
       if (celda.usada) {
-        btn.classList.add("usada", celda.ganador === null ? "nadie" : "g" + celda.ganador);
-        btn.textContent = celda.ganador === null ? "—" : estado.jugadores[celda.ganador].nombre;
+        btn.classList.add("usada");
+        if (celda.ganador === null) {
+          btn.classList.add("nadie");
+          btn.textContent = "—";
+        } else {
+          btn.classList.add("ganada");
+          btn.style.setProperty("--c", color(celda.ganador));
+          btn.textContent = estado.jugadores[celda.ganador].nombre;
+        }
       } else {
         btn.innerHTML = `<small>x</small>${celda.valor}`;
         if (!estaDisponible(c, f)) {
@@ -304,11 +348,10 @@ function renderPregunta() {
   $("#mPregunta").textContent = a.pregunta;
   $("#mResultado").textContent = a.mensaje;
 
-  const color = a.responde === 0 ? "var(--j0)" : "var(--j1)";
   const prefijo = a.esRebote ? "¡Rebote! Responde" : "Responde";
   const espera = !a.terminada && !puedeActuar(a.responde) ? " <small>(esperando su respuesta...)</small>" : "";
   $("#mQuien").innerHTML = a.terminada ? "" :
-    `${prefijo}: <b style="color:${color}">${nombreConMarca(a.responde)}</b>${espera}`;
+    `${prefijo}: <b style="color:${color(a.responde)}">${escapar(nombreConMarca(a.responde))}</b>${espera}`;
 
   const puedeResponder = !a.terminada && puedeActuar(a.responde);
   const cont = $("#mOpciones");
@@ -354,11 +397,29 @@ function pintarReloj() {
 setInterval(pintarReloj, 200);
 
 function renderFinal() {
-  const [a, b] = estado.jugadores;
-  const empate = a.puntos === b.puntos;
+  const orden = estado.jugadores
+    .map((j, i) => ({ ...j, i }))
+    .sort((a, b) => b.puntos - a.puntos);
+  const maximo = orden[0].puntos;
+  const ganadores = orden.filter((j) => j.puntos === maximo);
+  const empate = ganadores.length > 1;
+
   $(".trofeo").textContent = empate ? "🤝" : "🏆";
-  $("#ganador").textContent = empate ? "¡Empate!" : `¡Ganó ${a.puntos > b.puntos ? a.nombre : b.nombre}!`;
-  $("#resumen").innerHTML = `${a.nombre}: <b>${a.puntos}</b> pts &nbsp;·&nbsp; ${b.nombre}: <b>${b.puntos}</b> pts`;
+  $("#ganador").textContent = empate ? "¡Empate!" : `¡Ganó ${ganadores[0].nombre}!`;
+
+  // Puesto compartido si empatan en puntos
+  const medallas = ["🥇", "🥈", "🥉", "4°"];
+  let puesto = 0;
+  $("#ranking").innerHTML = orden.map((j, k) => {
+    if (k > 0 && j.puntos < orden[k - 1].puntos) puesto = k;
+    return `<li style="--c:${color(j.i)}">
+      <span class="medalla">${medallas[puesto]}</span>
+      <span class="avatar">${escapar(inicial(j.nombre))}</span>
+      <span class="rk-nombre">${escapar(j.nombre)}${j.conectado ? "" : " <small>(se fue)</small>"}</span>
+      <b>${j.puntos}</b>
+    </li>`;
+  }).join("");
+
   $("#btnRevancha").classList.toggle("oculto", estado.modo === "invitado");
   $("#esperaRevancha").classList.toggle("oculto", estado.modo !== "invitado");
   if (!$("#final").classList.contains("activa")) {
@@ -372,7 +433,7 @@ function lanzarConfeti() {
   const ctx = canvas.getContext("2d");
   canvas.width = innerWidth;
   canvas.height = innerHeight;
-  const colores = ["#f7c948", "#ff6b4a", "#38bdf8", "#22c55e", "#ffffff"];
+  const colores = ["#f7c948", "#ff6b4a", "#38bdf8", "#a3e635", "#c084fc", "#ffffff"];
   const piezas = Array.from({ length: 160 }, () => ({
     x: Math.random() * canvas.width,
     y: -20 - Math.random() * canvas.height * 0.6,
@@ -403,7 +464,8 @@ function lanzarConfeti() {
 
 function volverAlInicio() {
   Red.cerrar();
-  Object.assign(estado, { modo: "local", yo: null, fase: "inicio", actual: null, rival: null });
+  Object.assign(estado, { modo: "local", yo: null, fase: "inicio", actual: null, sala: [] });
+  puntosPrevios = [];
   $("#modal").classList.add("oculto");
   $("#aviso").classList.add("oculto");
   $("#estadoOnline").textContent = "";
@@ -415,6 +477,31 @@ function avisar(texto) {
   $("#avisoTexto").textContent = texto;
   $("#aviso").classList.remove("oculto");
 }
+
+// ---------- Modo local: cantidad de jugadores y nombres ----------
+
+let cantidadLocal = 2;
+const nombresLocales = ["Jugador 1", "Jugador 2", "Jugador 3", "Jugador 4"];
+
+function renderNombresLocales() {
+  $$("#optJugadores button").forEach((b) => b.classList.toggle("activo", Number(b.dataset.n) === cantidadLocal));
+  const cont = $("#nombresLocal");
+  cont.innerHTML = "";
+  for (let i = 0; i < cantidadLocal; i++) {
+    const label = document.createElement("label");
+    label.style.setProperty("--c", color(i));
+    label.innerHTML = `Jugador ${i + 1} <input maxlength="16">`;
+    const input = label.querySelector("input");
+    input.value = nombresLocales[i];
+    input.oninput = () => (nombresLocales[i] = input.value);
+    cont.appendChild(label);
+  }
+}
+
+$$("#optJugadores button").forEach((b) => (b.onclick = () => {
+  cantidadLocal = Number(b.dataset.n);
+  renderNombresLocales();
+}));
 
 // ---------- Modo online ----------
 
@@ -428,16 +515,34 @@ function enlaceSala(codigo) {
   return `${location.origin}${location.pathname}?sala=${codigo}`;
 }
 
+function listaHTML(nombres) {
+  return nombres.map((n, i) =>
+    `<li style="--c:${color(i)}"><span class="avatar">${escapar(inicial(n))}</span>${escapar(n)}${i === 0 ? " <small>👑 anfitrión</small>" : ""}</li>`
+  ).join("") + Array.from({ length: MAX_JUGADORES - nombres.length }, () => `<li class="vacio">Lugar libre</li>`).join("");
+}
+
+// El anfitrión actualiza su pantalla de sala y se la manda a los invitados.
+function actualizarSala() {
+  const nombres = [$("#miNombre").value.trim() || "Anfitrión", ...estado.sala.map((s) => s.nombre)];
+  $("#listaSala").innerHTML = listaHTML(nombres);
+  const faltan = estado.sala.length === 0;
+  $("#estadoSala").textContent = faltan
+    ? "Esperando jugadores..."
+    : nombres.length === MAX_JUGADORES ? "✅ ¡Sala completa!" : `✅ ¡Ya pueden jugar! (o esperá a más, hasta ${MAX_JUGADORES})`;
+  $("#btnEmpezarOnline").disabled = faltan;
+  Red.enviar({ tipo: "sala", nombres });
+}
+
 async function crearSala() {
   const nombre = miNombre();
   if (!nombre) return $("#miNombre").focus();
   $("#estadoOnline").textContent = "Creando sala...";
   try {
     const codigo = await Red.crearSala();
-    Object.assign(estado, { modo: "host", yo: 0, rival: null });
+    Object.assign(estado, { modo: "host", yo: 0, sala: [], fase: "inicio" });
     $("#codigoGrande").textContent = codigo;
-    $("#estadoSala").textContent = "Esperando rival...";
-    $("#btnEmpezarOnline").disabled = true;
+    $("#btnCompartir").textContent = "📤 Invitar";
+    actualizarSala();
     mostrarPanel("panelSala");
   } catch (e) {
     Red.cerrar();
@@ -453,9 +558,10 @@ async function unirseSala() {
   $("#estadoOnline").textContent = "Conectando...";
   try {
     await Red.unirse(codigo);
-    Object.assign(estado, { modo: "invitado", yo: 1 });
+    Object.assign(estado, { modo: "invitado", yo: null, fase: "inicio" });
     Red.enviar({ tipo: "hola", nombre });
     $("#estadoEspera").textContent = "Conectado. Esperando al anfitrión...";
+    $("#listaEspera").innerHTML = "";
     mostrarPanel("panelEspera");
     history.replaceState(null, "", location.pathname);
   } catch (e) {
@@ -473,58 +579,81 @@ async function compartir() {
     $("#btnCompartir").textContent = "✅ Link copiado";
   } catch (e) {
     // El usuario canceló o el navegador no permite copiar: mostrar el link
-    if (e.name !== "AbortError") prompt("Copiá este link y mandáselo a tu rival:", url);
+    if (e.name !== "AbortError") prompt("Copiá este link y mandáselo a los demás:", url);
   }
 }
 
 function empezarOnline() {
-  if (!Red.conectado || !estado.rival) return;
-  nuevaPartida([$("#miNombre").value.trim() || "Anfitrión", estado.rival], leerConfig());
+  if (estado.sala.length === 0) return;
+  const anfitrion = { id: Red.miId, nombre: $("#miNombre").value.trim() || "Anfitrión" };
+  nuevaPartida([anfitrion, ...estado.sala], leerConfig());
 }
 
-Red.on("mensaje", (m) => {
+// Un jugador se fue en plena partida: se lo saltea y, si estaba respondiendo, pierde el turno.
+function jugadorSeFue(id) {
+  const i = estado.jugadores.findIndex((j) => j.id === id);
+  if (i < 0 || !estado.jugadores[i].conectado) return;
+  estado.jugadores[i].conectado = false;
+  const nombre = estado.jugadores[i].nombre;
+
+  if (estado.jugadores.filter((j) => j.conectado).length < 2) {
+    return avisar("Todos los demás jugadores se desconectaron 😕");
+  }
+  const a = estado.actual;
+  if (estado.fase === "tablero" && a && !a.terminada && a.responde === i) {
+    return responder(null, null, `🔌 ${nombre} se desconectó.`);
+  }
+  if (estado.turno === i) estado.turno = siguiente(i);
+  sincronizar();
+}
+
+Red.on("mensaje", (m, id) => {
   if (estado.modo === "host") {
     if (m.tipo === "hola") {
-      estado.rival = String(m.nombre || "Rival").slice(0, 16);
-      $("#estadoSala").textContent = `✅ ${estado.rival} se unió. ¡Ya pueden jugar!`;
-      $("#btnEmpezarOnline").disabled = false;
-      Red.enviar({ tipo: "bienvenida", nombre: $("#miNombre").value.trim() });
+      if (estado.fase !== "inicio") return Red.expulsar(id, { tipo: "rechazo", motivo: "Esa partida ya empezó." });
+      if (estado.sala.length >= MAX_JUGADORES - 1) {
+        return Red.expulsar(id, { tipo: "rechazo", motivo: `Esa sala ya está completa (máximo ${MAX_JUGADORES} jugadores).` });
+      }
+      estado.sala.push({ id, nombre: String(m.nombre || "Jugador").slice(0, 16) });
+      actualizarSala();
       Sonido.click();
     } else if (m.tipo === "accion") {
-      ejecutar(m.accion, m, 1);
+      const quien = estado.jugadores.findIndex((j) => j.id === id);
+      if (quien >= 0) ejecutar(m.accion, m, quien);
     }
   } else if (estado.modo === "invitado") {
-    if (m.tipo === "bienvenida") {
-      $("#estadoEspera").textContent = `Conectado a la sala de ${m.nombre}. Esperando que empiece la partida...`;
+    if (m.tipo === "sala") {
+      $("#estadoEspera").textContent = `Sala de ${m.nombres[0]}. Esperando que empiece la partida...`;
+      $("#listaEspera").innerHTML = listaHTML(m.nombres);
     } else if (m.tipo === "estado") {
       aplicarFoto(m.estado, m.sonido);
-    } else if (m.tipo === "lleno") {
+    } else if (m.tipo === "rechazo") {
       Red.cerrar();
       estado.modo = "local";
       mostrarPanel("panelOnline");
-      $("#estadoOnline").textContent = "Esa sala ya tiene dos jugadores.";
+      $("#estadoOnline").textContent = m.motivo;
     }
   }
 });
 
-Red.on("desconectado", () => {
-  if (estado.modo === "host" && estado.fase === "inicio") {
-    // En la sala de espera: seguir esperando a otro rival
-    estado.rival = null;
-    $("#estadoSala").textContent = "El rival se fue. Esperando rival...";
-    $("#btnEmpezarOnline").disabled = true;
-    return;
+Red.on("desconectado", (id) => {
+  if (estado.modo === "host") {
+    const enSala = estado.sala.findIndex((s) => s.id === id);
+    if (enSala >= 0) estado.sala.splice(enSala, 1);
+    if (estado.fase === "inicio") return actualizarSala();
+    jugadorSeFue(id);
+  } else if (estado.modo === "invitado") {
+    avisar("Se perdió la conexión con el anfitrión 😕");
   }
-  if (estado.modo !== "local") avisar("Se perdió la conexión con el rival 😕");
 });
 
 Red.on("error", (msg) => {
-  if (estado.modo !== "local" && !Red.conectado && estado.fase !== "inicio") avisar(msg);
+  if (estado.modo === "invitado" && estado.fase !== "inicio") avisar(msg);
 });
 
 // ---------- Eventos ----------
 
-$("#btnModoLocal").onclick = () => mostrarPanel("panelLocal");
+$("#btnModoLocal").onclick = () => { renderNombresLocales(); mostrarPanel("panelLocal"); };
 $("#btnModoOnline").onclick = () => { mostrarPanel("panelOnline"); if (!$("#miNombre").value) $("#miNombre").focus(); };
 $$(".btn-volver").forEach((b) => (b.onclick = () => mostrarPanel("panelModo")));
 $$(".btn-salir").forEach((b) => (b.onclick = volverAlInicio));
@@ -532,7 +661,9 @@ $$(".btn-salir").forEach((b) => (b.onclick = volverAlInicio));
 $("#btnEmpezar").onclick = () => {
   estado.modo = "local";
   estado.yo = null;
-  nuevaPartida([$("#nombre1").value.trim() || "Jugador 1", $("#nombre2").value.trim() || "Jugador 2"], leerConfig());
+  const participantes = nombresLocales.slice(0, cantidadLocal)
+    .map((n, i) => ({ id: null, nombre: n.trim() || `Jugador ${i + 1}` }));
+  nuevaPartida(participantes, leerConfig());
 };
 $("#btnCrearSala").onclick = crearSala;
 $("#btnUnirse").onclick = unirseSala;
@@ -543,11 +674,10 @@ $("#btnEmpezarOnline").onclick = empezarOnline;
 
 $("#btnContinuar").onclick = () => accion("continuar");
 $("#btnRevancha").onclick = () => {
-  if (estado.modo === "local") nuevaPartida(estado.jugadores.map((j) => j.nombre), estado.config);
-  else if (estado.modo === "host") {
-    if (!Red.conectado) return avisar("El rival ya no está conectado.");
-    nuevaPartida(estado.jugadores.map((j) => j.nombre), estado.config);
-  }
+  const siguen = estado.jugadores.filter((j) => j.conectado).map(({ id, nombre }) => ({ id, nombre }));
+  if (siguen.length < 2) return avisar("No quedan jugadores conectados para la revancha.");
+  puntosPrevios = [];
+  nuevaPartida(siguen, estado.config);
 };
 $("#btnNuevo").onclick = volverAlInicio;
 $("#btnAvisoOk").onclick = volverAlInicio;

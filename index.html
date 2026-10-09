@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="estilos.css">
+  <link rel="stylesheet" href="estilos.css?v=5">
 </head>
 <body>
   <!-- Pantalla de inicio -->
@@ -22,7 +22,7 @@
       <div class="logo-pelota">⚽</div>
       <h1><span>Preguntas de</span> Fútbol</h1>
     </div>
-    <p class="sub">Duelo de 2 jugadores · En cada columna se empieza por <b>abajo</b> y se va subiendo</p>
+    <p class="sub">De 2 a 4 jugadores · En cada columna se empieza por <b>abajo</b> y se va subiendo</p>
 
     <!-- Elegir modo -->
     <div id="panelModo" class="panel activo">
@@ -32,10 +32,15 @@
 
     <!-- Modo local -->
     <div id="panelLocal" class="panel">
-      <div class="nombres">
-        <label>Jugador 1 <input id="nombre1" maxlength="16" value="Jugador 1"></label>
-        <label>Jugador 2 <input id="nombre2" maxlength="16" value="Jugador 2"></label>
+      <div class="cantidad-jugadores">
+        <span>Jugadores</span>
+        <div class="selector" id="optJugadores" role="radiogroup" aria-label="Cantidad de jugadores">
+          <button data-n="2" class="activo">2</button>
+          <button data-n="3">3</button>
+          <button data-n="4">4</button>
+        </div>
       </div>
+      <div class="nombres" id="nombresLocal"></div>
       <div class="slot-opciones"></div>
       <button id="btnEmpezar" class="btn grande">Empezar</button>
       <button class="btn secundario btn-volver">← Volver</button>
@@ -62,7 +67,8 @@
       <p>Código de la sala</p>
       <div id="codigoGrande" class="codigo-grande"></div>
       <button id="btnCompartir" class="btn">📤 Invitar</button>
-      <p id="estadoSala" class="estado-red">Esperando rival...</p>
+      <ul id="listaSala" class="lista-sala"></ul>
+      <p id="estadoSala" class="estado-red">Esperando jugadores...</p>
       <div class="slot-opciones"></div>
       <button id="btnEmpezarOnline" class="btn grande" disabled>Empezar</button>
       <button class="btn secundario btn-salir">✖ Cerrar sala</button>
@@ -71,13 +77,14 @@
     <!-- Online: invitado esperando -->
     <div id="panelEspera" class="panel">
       <p id="estadoEspera" class="estado-red"></p>
+      <ul id="listaEspera" class="lista-sala"></ul>
       <div class="pelota-cargando">⚽</div>
       <button class="btn secundario btn-salir">✖ Salir</button>
     </div>
 
     <!-- Opciones de partida (se mueve al panel activo) -->
     <div id="opciones" class="opciones-juego">
-      <label><input type="checkbox" id="optRebote" checked> Rebote: si uno falla, el rival puede responder</label>
+      <label><input type="checkbox" id="optRebote" checked> Rebote: si uno falla, responde el siguiente</label>
       <label><input type="checkbox" id="optRestar"> Restar puntos al fallar</label>
       <label>Categorías por partida (se sortean)
         <select id="optCantidad">
@@ -100,12 +107,11 @@
   <!-- Tablero -->
   <section id="juego" class="pantalla">
     <header class="marcador">
-      <div class="jugador" id="j0"><span class="avatar"></span><div class="datos"><span class="nombre"></span><span class="puntos">0</span></div></div>
-      <div class="centro">
+      <div id="jugadores" class="jugadores"></div>
+      <div class="barra-turno">
         <div class="turno" id="turno"></div>
         <button class="btn-sonido" aria-label="Activar o silenciar sonido">🔊</button>
       </div>
-      <div class="jugador" id="j1"><span class="avatar"></span><div class="datos"><span class="nombre"></span><span class="puntos">0</span></div></div>
     </header>
     <div id="tablero" class="tablero"></div>
   </section>
@@ -131,7 +137,7 @@
     <canvas id="confeti"></canvas>
     <div class="trofeo">🏆</div>
     <h1 id="ganador"></h1>
-    <p id="resumen" class="sub"></p>
+    <ol id="ranking" class="ranking"></ol>
     <p id="esperaRevancha" class="estado-red oculto">Esperando que el anfitrión arranque la revancha...</p>
     <button id="btnRevancha" class="btn grande">Revancha</button>
     <button id="btnNuevo" class="btn">Volver al inicio</button>
@@ -146,9 +152,9 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
-  <script src="sonidos.js"></script>
-  <script src="preguntas.js"></script>
-  <script src="red.js"></script>
-  <script src="juego.js"></script>
+  <script src="sonidos.js?v=5"></script>
+  <script src="preguntas.js?v=5"></script>
+  <script src="red.js?v=5"></script>
+  <script src="juego.js?v=5"></script>
 </body>
 </html>
