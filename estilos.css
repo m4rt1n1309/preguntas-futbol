@@ -1,0 +1,142 @@
+:root {
+  --fondo: #0b3d2e;
+  --cesped: #11573f;
+  --linea: #e8f5e9;
+  --celda: #1565c0;
+  --celda-hover: #1e88e5;
+  --oro: #ffc107;
+  --texto: #ffffff;
+  --bien: #2e7d32;
+  --mal: #c62828;
+  --j0: #ff7043;
+  --j1: #29b6f6;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: var(--texto);
+  background:
+    repeating-linear-gradient(90deg, var(--fondo) 0 80px, var(--cesped) 80px 160px);
+}
+
+.pantalla { display: none; padding: 24px 16px; max-width: 1200px; margin: 0 auto; }
+.pantalla.activa { display: block; }
+
+#inicio, #final { text-align: center; padding-top: 8vh; }
+h1 { font-size: clamp(2rem, 6vw, 3.5rem); margin: 0 0 12px; text-shadow: 0 3px 0 #0006; }
+.sub { font-size: 1.1rem; opacity: .9; line-height: 1.5; }
+
+.nombres { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin: 28px 0 16px; }
+.nombres label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.nombres input {
+  font-size: 1.1rem; padding: 10px 14px; border-radius: 10px; border: none; width: 220px; text-align: center;
+}
+.opciones-juego { display: flex; flex-direction: column; gap: 10px; align-items: center; margin: 16px 0 28px; }
+.opciones-juego select { margin-left: 8px; padding: 4px; border-radius: 6px; }
+
+.btn {
+  background: var(--oro); color: #222; border: none; border-radius: 12px;
+  font-size: 1.1rem; font-weight: 700; padding: 12px 28px; cursor: pointer; margin: 6px;
+  box-shadow: 0 4px 0 #b38600; transition: transform .1s;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b38600; }
+.btn.grande { font-size: 1.4rem; padding: 16px 48px; }
+
+/* Marcador */
+.marcador { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.jugador {
+  display: flex; flex-direction: column; align-items: center; min-width: 150px;
+  padding: 10px 20px; border-radius: 14px; background: #0006; border: 3px solid transparent; transition: all .2s;
+}
+#j0 .nombre { color: var(--j0); }
+#j1 .nombre { color: var(--j1); }
+.jugador .nombre { font-weight: 700; font-size: 1.1rem; }
+.jugador .puntos { font-size: 2.2rem; font-weight: 800; }
+#j0.activo { border-color: var(--j0); box-shadow: 0 0 18px var(--j0); }
+#j1.activo { border-color: var(--j1); box-shadow: 0 0 18px var(--j1); }
+.turno { font-size: 1.2rem; text-align: center; }
+
+/* Tablero */
+.tablero { display: grid; gap: 8px; }
+.cat {
+  background: #0d47a1; border-radius: 10px; padding: 12px 6px; text-align: center;
+  font-weight: 800; text-transform: uppercase; font-size: clamp(.7rem, 1.6vw, 1rem);
+  display: flex; flex-direction: column; justify-content: center; min-height: 70px;
+}
+.cat .ico { font-size: 1.6rem; }
+.celda {
+  background: var(--celda); border: none; border-radius: 10px; color: var(--oro);
+  font-size: clamp(1rem, 3vw, 2rem); font-weight: 800; min-height: 70px; cursor: pointer;
+  text-shadow: 0 2px 0 #0008; transition: transform .1s, background .2s;
+}
+.celda.disponible { animation: brillo 1.6s infinite; }
+.celda.disponible:hover { background: var(--celda-hover); transform: scale(1.04); }
+.celda.bloqueada { opacity: .45; cursor: not-allowed; }
+.celda.usada { background: #0004; color: transparent; text-shadow: none; cursor: default; font-size: .9rem; }
+.celda.usada.g0 { color: var(--j0); }
+.celda.usada.g1 { color: var(--j1); }
+.celda.usada.nadie { color: #fff6; }
+@keyframes brillo { 50% { box-shadow: 0 0 14px var(--oro); } }
+
+/* Modal pregunta */
+.modal { position: fixed; inset: 0; background: #000b; display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+.modal.oculto { display: none; }
+.caja { background: #0d47a1; border-radius: 18px; padding: 24px; width: min(720px, 100%); box-shadow: 0 10px 40px #000; }
+.cabecera { display: flex; justify-content: space-between; font-weight: 700; color: var(--oro); font-size: 1.1rem; }
+.quien { margin-top: 8px; font-size: 1rem; }
+.caja h2 { font-size: clamp(1.2rem, 3vw, 1.7rem); margin: 18px 0; line-height: 1.35; }
+.opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 560px) { .opciones { grid-template-columns: 1fr; } }
+.opcion {
+  background: #fff; color: #0d47a1; border: none; border-radius: 10px; padding: 14px;
+  font-size: 1.05rem; font-weight: 700; cursor: pointer; text-align: left;
+}
+.opcion:hover:not(:disabled) { background: #ffe082; }
+.opcion:disabled { cursor: default; opacity: .6; }
+.opcion.correcta { background: var(--bien); color: #fff; opacity: 1; }
+.opcion.incorrecta { background: var(--mal); color: #fff; opacity: 1; }
+.resultado { min-height: 1.6em; margin: 16px 0 8px; font-size: 1.2rem; font-weight: 700; text-align: center; }
+#btnContinuar { display: block; margin: 0 auto; }
+#btnContinuar.oculto { display: none; }
+
+.timer { height: 8px; background: #fff3; border-radius: 4px; margin-top: 12px; overflow: hidden; }
+.timer.oculto { visibility: hidden; }
+.timer .barra { height: 100%; width: 100%; background: var(--oro); transition: width 1s linear; }
+.timer.urgente .barra { background: var(--mal); }
+
+@media (max-width: 640px) {
+  .jugador { min-width: 0; padding: 8px 10px; }
+  .jugador .puntos { font-size: 1.6rem; }
+  .cat .ico { font-size: 1.2rem; }
+  .celda, .cat { min-height: 52px; }
+}
+
+/* Sonido */
+.centro { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.btn-sonido {
+  background: #0006; border: 2px solid #fff4; color: #fff; border-radius: 50%;
+  width: 44px; height: 44px; font-size: 1.3rem; cursor: pointer; padding: 0;
+}
+.btn-sonido.flotante { position: absolute; top: 16px; right: 16px; }
+
+/* Celular: tablero compacto */
+@media (max-width: 640px) {
+  .pantalla { padding: 12px 8px; }
+  #inicio, #final { padding-top: 64px; }
+  .tablero { gap: 4px; }
+  .cat { padding: 6px 2px; min-height: 64px; border-radius: 6px; }
+  .cat .nom { font-size: .55rem; line-height: 1.15; overflow-wrap: anywhere; hyphens: auto; }
+  .celda { border-radius: 6px; font-size: 1rem; }
+  .celda.usada { font-size: .55rem; overflow-wrap: anywhere; }
+  .turno { font-size: .9rem; }
+  .jugador .nombre { font-size: .9rem; }
+  .caja { padding: 16px; }
+  .opcion { padding: 12px; font-size: 1rem; }
+}
+body { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }

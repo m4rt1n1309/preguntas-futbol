@@ -1,0 +1,380 @@
+// Banco de preguntas.
+// Cada categoría tiene preguntas por valor (100..500). En cada partida se sortean
+// las categorías y, para cada casilla, una de sus preguntas.
+// La primera opción de "o" es SIEMPRE la correcta (se mezclan al mostrarse).
+const VALORES = [100, 200, 300, 400, 500];
+
+const CATEGORIAS = [
+  {
+    nombre: "Champions League",
+    icono: "🏆",
+    preguntas: {
+      100: [
+        { p: "¿Qué club tiene más Copas de Europa / Champions League?", o: ["Real Madrid", "Milan", "Bayern Múnich", "Liverpool"] },
+        { p: "¿Quién es el máximo goleador histórico de la Champions League?", o: ["Cristiano Ronaldo", "Lionel Messi", "Robert Lewandowski", "Raúl"] },
+        { p: "¿Qué club inglés ganó 6 Copas de Europa / Champions?", o: ["Liverpool", "Manchester United", "Chelsea", "Arsenal"] },
+      ],
+      200: [
+        { p: "¿En qué año ganó el Barcelona la Champions con el tridente Messi-Suárez-Neymar?", o: ["2015", "2011", "2009", "2016"] },
+        { p: "¿Qué equipo remontó un 0-3 y ganó la final de Estambul 2005?", o: ["Liverpool", "Milan", "Chelsea", "Manchester United"] },
+        { p: "¿En qué año ganó el Inter de Mourinho la Champions?", o: ["2010", "2008", "2011", "2004"] },
+      ],
+      300: [
+        { p: "¿Quién marcó un gol de chilena en la final de 2018 ante el Liverpool?", o: ["Gareth Bale", "Cristiano Ronaldo", "Karim Benzema", "Marcelo"] },
+        { p: "¿Qué club inglés ganó la Champions 2021 ante el Manchester City?", o: ["Chelsea", "Liverpool", "Tottenham", "Arsenal"] },
+        { p: "¿Qué club ganó su primera Champions en 2023, ante el Inter?", o: ["Manchester City", "PSG", "Arsenal", "Napoli"] },
+      ],
+      400: [
+        { p: "¿Qué equipo portugués ganó la Champions 2004 dirigido por José Mourinho?", o: ["Porto", "Benfica", "Sporting de Lisboa", "Braga"] },
+        { p: "¿Contra quién ganó el Manchester United la final de 1999 en el Camp Nou?", o: ["Bayern Múnich", "Juventus", "Valencia", "Borussia Dortmund"] },
+        { p: "¿Qué club ganó la Champions 2012 por penales en Múnich, ante el Bayern?", o: ["Chelsea", "Barcelona", "Real Madrid", "Manchester United"] },
+      ],
+      500: [
+        { p: "¿Qué club ganó la Copa de Europa de 1991?", o: ["Estrella Roja de Belgrado", "Olympique de Marsella", "Steaua de Bucarest", "PSV Eindhoven"] },
+        { p: "¿Qué club ganó la Champions 1995 con un plantel muy joven?", o: ["Ajax", "Milan", "Juventus", "Borussia Dortmund"] },
+        { p: "¿Cuál fue el primer club británico en ganar la Copa de Europa (1967)?", o: ["Celtic", "Manchester United", "Liverpool", "Rangers"] },
+      ],
+    },
+  },
+  {
+    nombre: "Mundial",
+    icono: "🌍",
+    preguntas: {
+      100: [
+        { p: "¿Qué selección ganó el Mundial de Qatar 2022?", o: ["Argentina", "Francia", "Croacia", "Brasil"] },
+        { p: "¿Qué selección tiene más Mundiales ganados?", o: ["Brasil", "Alemania", "Italia", "Argentina"] },
+        { p: "¿Quién fue el capitán de Argentina campeona del Mundial 2022?", o: ["Lionel Messi", "Ángel Di María", "Nicolás Otamendi", "Rodrigo De Paul"] },
+      ],
+      200: [
+        { p: "¿En qué país se jugó el Mundial 2014?", o: ["Brasil", "Sudáfrica", "Rusia", "Alemania"] },
+        { p: "¿Quién es el máximo goleador histórico de los Mundiales?", o: ["Miroslav Klose", "Ronaldo Nazário", "Gerd Müller", "Just Fontaine"] },
+        { p: "¿Qué país organizó el Mundial 2018?", o: ["Rusia", "Qatar", "Brasil", "Alemania"] },
+      ],
+      300: [
+        { p: "¿Quién marcó el gol de España en la final del Mundial 2010?", o: ["Andrés Iniesta", "David Villa", "Fernando Torres", "Xavi Hernández"] },
+        { p: "¿Qué país organizó y ganó el primer Mundial, en 1930?", o: ["Uruguay", "Argentina", "Italia", "Brasil"] },
+        { p: "¿Qué arquero le tapó el mano a mano a Kolo Muani en el final del alargue de Qatar 2022?", o: ["Emiliano Martínez", "Franco Armani", "Gerónimo Rulli", "Hugo Lloris"] },
+      ],
+      400: [
+        { p: "¿Contra quién jugó Argentina la final del Mundial 1986?", o: ["Alemania Federal", "Inglaterra", "Bélgica", "Italia"] },
+        { p: "¿Quién marcó dos goles de cabeza en la final del Mundial 1998?", o: ["Zinedine Zidane", "Thierry Henry", "Emmanuel Petit", "Youri Djorkaeff"] },
+        { p: "¿Qué selección ganó el Mundial 1966 como local?", o: ["Inglaterra", "Alemania Federal", "Portugal", "Brasil"] },
+      ],
+      500: [
+        { p: "¿Cuántos goles marcó Just Fontaine en el Mundial 1958 (récord en una sola edición)?", o: ["13", "11", "10", "9"] },
+        { p: "¿Cuál fue la primera selección africana en llegar a semifinales de un Mundial?", o: ["Marruecos", "Camerún", "Senegal", "Ghana"] },
+        { p: "¿Qué selección ganó el Mundial 1954 en el llamado \"Milagro de Berna\"?", o: ["Alemania Federal", "Hungría", "Uruguay", "Suecia"] },
+      ],
+    },
+  },
+  {
+    nombre: "Libertadores",
+    icono: "🏅",
+    preguntas: {
+      100: [
+        { p: "¿Qué club tiene más Copas Libertadores?", o: ["Independiente", "Boca Juniors", "Peñarol", "River Plate"] },
+        { p: "¿Quién ganó la final de la Libertadores 2018 jugada en Madrid?", o: ["River Plate", "Boca Juniors", "Grêmio", "Palmeiras"] },
+        { p: "¿Qué club brasileño ganó las Libertadores 2020 y 2021?", o: ["Palmeiras", "Flamengo", "Santos", "Fluminense"] },
+      ],
+      200: [
+        { p: "¿Cuántas Copas Libertadores tiene Boca Juniors?", o: ["6", "5", "7", "4"] },
+        { p: "¿Qué club ganó la Libertadores 2019 con dos goles de Gabigol en el final?", o: ["Flamengo", "Palmeiras", "Santos", "Grêmio"] },
+        { p: "¿Qué club argentino ganó la Libertadores 2015 ante Tigres de México?", o: ["River Plate", "Boca Juniors", "San Lorenzo", "Racing Club"] },
+      ],
+      300: [
+        { p: "¿Qué club argentino ganó la Libertadores 1994 ante São Paulo?", o: ["Vélez Sarsfield", "Independiente", "River Plate", "Boca Juniors"] },
+        { p: "¿Qué club colombiano ganó la Libertadores 2016?", o: ["Atlético Nacional", "Once Caldas", "Millonarios", "América de Cali"] },
+        { p: "¿Qué club argentino ganó su primera Libertadores en 2014?", o: ["San Lorenzo", "Lanús", "Racing Club", "Newell's Old Boys"] },
+      ],
+      400: [
+        { p: "¿Qué club ganó la primera Copa Libertadores, en 1960?", o: ["Peñarol", "Nacional", "Santos", "Independiente"] },
+        { p: "¿Qué club argentino ganó tres Libertadores seguidas entre 1968 y 1970?", o: ["Estudiantes de La Plata", "Independiente", "Racing Club", "Boca Juniors"] },
+        { p: "¿Qué club argentino ganó la Libertadores 1967?", o: ["Racing Club", "Independiente", "Estudiantes de La Plata", "River Plate"] },
+      ],
+      500: [
+        { p: "¿Qué club ecuatoriano ganó la Libertadores 2008?", o: ["LDU Quito", "Barcelona SC", "Emelec", "Independiente del Valle"] },
+        { p: "¿Qué club paraguayo ganó la Libertadores en 1979, 1990 y 2002?", o: ["Olimpia", "Cerro Porteño", "Libertad", "Guaraní"] },
+        { p: "¿Qué club uruguayo le ganó la final de la Libertadores 1988 a Newell's?", o: ["Nacional", "Peñarol", "Defensor Sporting", "Danubio"] },
+      ],
+    },
+  },
+  {
+    nombre: "Ligas de Europa",
+    icono: "⚽",
+    preguntas: {
+      100: [
+        { p: "¿Cómo se llama el estadio del Real Madrid?", o: ["Santiago Bernabéu", "Camp Nou", "Metropolitano", "Mestalla"] },
+        { p: "¿Qué club inglés es conocido como \"Los Diablos Rojos\"?", o: ["Manchester United", "Liverpool", "Arsenal", "Nottingham Forest"] },
+        { p: "¿Cómo se le dice al partido entre Real Madrid y Barcelona?", o: ["El Clásico", "El Derbi", "El Superclásico", "El Old Firm"] },
+      ],
+      200: [
+        { p: "¿Qué equipo fue el campeón sorpresa de la Premier League 2015-16?", o: ["Leicester City", "West Ham", "Tottenham", "Southampton"] },
+        { p: "¿Qué equipo ganó la Premier League 2003-04 sin perder ningún partido?", o: ["Arsenal", "Chelsea", "Manchester United", "Liverpool"] },
+        { p: "¿Qué club es el más ganador de la liga de Francia?", o: ["PSG", "Saint-Étienne", "Olympique de Marsella", "Lyon"] },
+      ],
+      300: [
+        { p: "¿En qué club italiano fue ídolo Diego Maradona?", o: ["Napoli", "Roma", "Juventus", "Fiorentina"] },
+        { p: "¿Qué club ganó la Bundesliga 2023-24 de forma invicta?", o: ["Bayer Leverkusen", "Bayern Múnich", "Borussia Dortmund", "RB Leipzig"] },
+        { p: "¿Cómo se llama el estadio del Bayern Múnich?", o: ["Allianz Arena", "Signal Iduna Park", "Olympiastadion", "Veltins-Arena"] },
+      ],
+      400: [
+        { p: "¿Quién es el máximo goleador histórico de la Premier League?", o: ["Alan Shearer", "Wayne Rooney", "Harry Kane", "Thierry Henry"] },
+        { p: "¿Qué club ganó 9 títulos seguidos de la Serie A entre 2012 y 2020?", o: ["Juventus", "Inter", "Milan", "Napoli"] },
+        { p: "¿Qué club ganó la Serie A 2022-23 después de 33 años sin títulos?", o: ["Napoli", "Lazio", "Roma", "Atalanta"] },
+      ],
+      500: [
+        { p: "¿Quién es el máximo goleador histórico de LaLiga?", o: ["Lionel Messi", "Cristiano Ronaldo", "Telmo Zarra", "Hugo Sánchez"] },
+        { p: "¿Cómo se llama el clásico entre Celtic y Rangers?", o: ["Old Firm", "Derby della Madonnina", "Merseyside Derby", "Der Klassiker"] },
+        { p: "¿Qué club ganó la Premier 2019-20 cortando una sequía de 30 años sin ligas?", o: ["Liverpool", "Manchester City", "Chelsea", "Leicester City"] },
+      ],
+    },
+  },
+  {
+    nombre: "Leyendas",
+    icono: "⭐",
+    preguntas: {
+      100: [
+        { p: "¿Cuál era uno de los apodos de Diego Maradona?", o: ["El Pibe de Oro", "La Pulga", "El Fenómeno", "El Káiser"] },
+        { p: "¿Cuántos Balones de Oro ganó Lionel Messi?", o: ["8", "7", "6", "5"] },
+        { p: "¿A qué jugador se lo conoce como \"O Rei\"?", o: ["Pelé", "Garrincha", "Zico", "Romário"] },
+      ],
+      200: [
+        { p: "¿Qué jugador brasileño es apodado \"El Fenómeno\"?", o: ["Ronaldo Nazário", "Ronaldinho", "Romário", "Rivaldo"] },
+        { p: "¿En qué club brasileño jugó Pelé casi toda su carrera?", o: ["Santos", "Flamengo", "Corinthians", "Botafogo"] },
+        { p: "¿Qué jugador francés le dio un cabezazo a Materazzi en la final de 2006?", o: ["Zinedine Zidane", "Thierry Henry", "Franck Ribéry", "Patrick Vieira"] },
+      ],
+      300: [
+        { p: "¿Qué jugador neerlandés es el gran símbolo del \"Fútbol Total\"?", o: ["Johan Cruyff", "Marco van Basten", "Ruud Gullit", "Dennis Bergkamp"] },
+        { p: "¿Cuál es el único arquero que ganó el Balón de Oro?", o: ["Lev Yashin", "Gianluigi Buffon", "Oliver Kahn", "Manuel Neuer"] },
+        { p: "¿Qué leyenda húngara era apodada \"Cañoncito Pum\"?", o: ["Ferenc Puskás", "Sándor Kocsis", "Nándor Hidegkuti", "Zoltán Czibor"] },
+      ],
+      400: [
+        { p: "¿Qué argentino ganó dos Balones de Oro jugando en el Real Madrid en los años 50?", o: ["Alfredo Di Stéfano", "Omar Sívori", "Ferenc Puskás", "Héctor Rial"] },
+        { p: "¿Qué jugador italiano era apodado \"Il Divin Codino\"?", o: ["Roberto Baggio", "Paolo Maldini", "Francesco Totti", "Alessandro Del Piero"] },
+        { p: "¿En qué club inglés es máximo ídolo Thierry Henry?", o: ["Arsenal", "Chelsea", "Manchester United", "Tottenham"] },
+      ],
+      500: [
+        { p: "¿Quién ganó el primer Balón de Oro de la historia, en 1956?", o: ["Stanley Matthews", "Alfredo Di Stéfano", "Raymond Kopa", "Ferenc Puskás"] },
+        { p: "¿A qué leyenda alemana se la conocía como \"El Káiser\"?", o: ["Franz Beckenbauer", "Gerd Müller", "Lothar Matthäus", "Karl-Heinz Rummenigge"] },
+        { p: "¿Qué jugador del Benfica ganó el Balón de Oro 1965?", o: ["Eusébio", "Mário Coluna", "José Águas", "Luís Figo"] },
+      ],
+    },
+  },
+  {
+    nombre: "Fútbol Argentino",
+    icono: "🧉",
+    preguntas: {
+      100: [
+        { p: "¿Cómo se conoce popularmente al estadio de Boca Juniors?", o: ["La Bombonera", "El Monumental", "El Cilindro", "El Gigante"] },
+        { p: "¿Cómo se llama el clásico entre Boca y River?", o: ["Superclásico", "Clásico de Avellaneda", "Clásico rosarino", "Clásico platense"] },
+        { p: "¿Cómo se conoce al estadio de River Plate?", o: ["El Monumental", "La Bombonera", "El Nuevo Gasómetro", "La Fortaleza"] },
+      ],
+      200: [
+        { p: "¿Qué club es apodado \"La Academia\"?", o: ["Racing Club", "Independiente", "San Lorenzo", "Huracán"] },
+        { p: "¿En qué año descendió River Plate a la B Nacional?", o: ["2011", "2009", "2012", "2010"] },
+        { p: "¿Qué club es apodado \"El Pincha\"?", o: ["Estudiantes de La Plata", "Gimnasia de La Plata", "Banfield", "Lanús"] },
+      ],
+      300: [
+        { p: "¿Qué club es conocido como \"El Ciclón\"?", o: ["San Lorenzo", "Huracán", "Lanús", "Banfield"] },
+        { p: "¿Qué club argentino es conocido como \"El Rey de Copas\"?", o: ["Independiente", "Boca Juniors", "River Plate", "Estudiantes"] },
+        { p: "¿Qué club de Rosario es apodado \"La Lepra\"?", o: ["Newell's Old Boys", "Rosario Central", "Argentino de Rosario", "Tiro Federal"] },
+      ],
+      400: [
+        { p: "¿En qué club debutó Diego Maradona como profesional?", o: ["Argentinos Juniors", "Boca Juniors", "Newell's Old Boys", "Huracán"] },
+        { p: "¿Quién es el máximo goleador histórico de Boca Juniors?", o: ["Martín Palermo", "Roberto Cherro", "Francisco Varallo", "Carlos Tevez"] },
+        { p: "¿Qué club argentino ganó la Copa Sudamericana 2013?", o: ["Lanús", "Arsenal de Sarandí", "Vélez Sarsfield", "Independiente"] },
+      ],
+      500: [
+        { p: "¿Quién es el máximo goleador histórico del fútbol argentino de Primera División?", o: ["Arsenio Erico", "Ángel Labruna", "Martín Palermo", "Herminio Masantonio"] },
+        { p: "¿Cuál fue el primer club argentino en ganar la Copa Intercontinental (1967)?", o: ["Racing Club", "Estudiantes", "Independiente", "Boca Juniors"] },
+        { p: "¿Quién es el máximo goleador histórico de River Plate?", o: ["Ángel Labruna", "Bernabé Ferreyra", "Enzo Francescoli", "Oscar Más"] },
+      ],
+    },
+  },
+  {
+    nombre: "Selección Argentina",
+    icono: "🇦🇷",
+    preguntas: {
+      100: [
+        { p: "¿Quién es el máximo goleador histórico de la Selección Argentina?", o: ["Lionel Messi", "Gabriel Batistuta", "Sergio Agüero", "Hernán Crespo"] },
+        { p: "¿Quién fue el DT de Argentina campeona del Mundial 2022?", o: ["Lionel Scaloni", "Jorge Sampaoli", "Alejandro Sabella", "Gerardo Martino"] },
+        { p: "¿Cuántos Mundiales ganó Argentina?", o: ["3", "2", "4", "1"] },
+      ],
+      200: [
+        { p: "¿Quién hizo el gol de la final de la Copa América 2021 en el Maracaná?", o: ["Ángel Di María", "Lionel Messi", "Lautaro Martínez", "Rodrigo De Paul"] },
+        { p: "¿Quién fue el DT de Argentina campeona del Mundial 1986?", o: ["Carlos Bilardo", "César Luis Menotti", "Alfio Basile", "Daniel Passarella"] },
+        { p: "¿Quién hizo el gol de Argentina en la final de la Copa América 2024?", o: ["Lautaro Martínez", "Julián Álvarez", "Lionel Messi", "Ángel Di María"] },
+      ],
+      300: [
+        { p: "¿Contra quién jugó Argentina la final del Mundial 1978?", o: ["Países Bajos", "Brasil", "Italia", "Alemania Federal"] },
+        { p: "¿Quién fue el goleador de Argentina en el Mundial 1978?", o: ["Mario Kempes", "Leopoldo Luque", "Daniel Bertoni", "Osvaldo Ardiles"] },
+        { p: "¿A qué selección le hizo Maradona el gol de \"La Mano de Dios\"?", o: ["Inglaterra", "Bélgica", "Italia", "Alemania Federal"] },
+      ],
+      400: [
+        { p: "¿Quién fue el DT de Argentina campeona del Mundial 1978?", o: ["César Luis Menotti", "Carlos Bilardo", "Juan Carlos Lorenzo", "Osvaldo Zubeldía"] },
+        { p: "¿Quién fue el capitán de Argentina campeona en 1978?", o: ["Daniel Passarella", "Ubaldo Fillol", "Mario Kempes", "Américo Gallego"] },
+        { p: "¿Contra qué selección perdió Argentina en su debut en Qatar 2022?", o: ["Arabia Saudita", "México", "Polonia", "Australia"] },
+      ],
+      500: [
+        { p: "¿Quién hizo el gol de Alemania en la final del Mundial 2014?", o: ["Mario Götze", "Thomas Müller", "André Schürrle", "Miroslav Klose"] },
+        { p: "¿Quién convirtió el penal de Alemania en la final del Mundial 1990?", o: ["Andreas Brehme", "Lothar Matthäus", "Rudi Völler", "Jürgen Klinsmann"] },
+        { p: "¿Qué arquero argentino fue figura atajando penales en Italia 90?", o: ["Sergio Goycochea", "Nery Pumpido", "Ubaldo Fillol", "Luis Islas"] },
+      ],
+    },
+  },
+  {
+    nombre: "Copa América",
+    icono: "🥇",
+    preguntas: {
+      100: [
+        { p: "¿Qué selección tiene más Copas América?", o: ["Argentina", "Uruguay", "Brasil", "Chile"] },
+        { p: "¿Qué selección ganó la Copa América 2021?", o: ["Argentina", "Brasil", "Colombia", "Perú"] },
+        { p: "¿En qué país se jugó la Copa América 2024?", o: ["Estados Unidos", "Brasil", "Argentina", "México"] },
+      ],
+      200: [
+        { p: "¿Qué selección le ganó a Argentina la final de la Copa América Centenario 2016?", o: ["Chile", "Colombia", "Brasil", "Uruguay"] },
+        { p: "¿Qué selección ganó la Copa América 2019?", o: ["Brasil", "Perú", "Argentina", "Chile"] },
+        { p: "¿Qué selección ganó su primera Copa América en 2015, como local?", o: ["Chile", "Colombia", "Perú", "Paraguay"] },
+      ],
+      300: [
+        { p: "¿Qué selección ganó la Copa América 2001?", o: ["Colombia", "México", "Brasil", "Uruguay"] },
+        { p: "¿Qué selección ganó la Copa América 2011, jugada en Argentina?", o: ["Uruguay", "Paraguay", "Argentina", "Brasil"] },
+        { p: "¿Qué país organizó la Copa América 2019?", o: ["Brasil", "Argentina", "Chile", "Colombia"] },
+      ],
+      400: [
+        { p: "Antes de 2021, ¿en qué año había ganado Argentina su última Copa América?", o: ["1993", "1991", "1997", "2004"] },
+        { p: "¿Qué selección goleó 3-0 a Argentina en la final de la Copa América 2007?", o: ["Brasil", "Uruguay", "México", "Colombia"] },
+        { p: "¿Qué selección invitada perdió la final de la Copa América 2001 ante Colombia?", o: ["México", "Honduras", "Costa Rica", "Estados Unidos"] },
+      ],
+      500: [
+        { p: "¿Qué selección ganó las Copas América de 1953 y 1979?", o: ["Paraguay", "Perú", "Uruguay", "Chile"] },
+        { p: "¿Qué selección ganó su única Copa América en 1963, como local?", o: ["Bolivia", "Ecuador", "Venezuela", "Colombia"] },
+        { p: "¿Qué selección ganó las Copas América de 1939 y 1975?", o: ["Perú", "Paraguay", "Colombia", "Chile"] },
+      ],
+    },
+  },
+  {
+    nombre: "Técnicos",
+    icono: "📋",
+    preguntas: {
+      100: [
+        { p: "¿Quién dirigía al Barcelona que ganó el sextete en 2009?", o: ["Pep Guardiola", "Frank Rijkaard", "Luis Enrique", "Tito Vilanova"] },
+        { p: "¿Qué entrenador es apodado \"The Special One\"?", o: ["José Mourinho", "Pep Guardiola", "Carlo Ancelotti", "Jürgen Klopp"] },
+        { p: "¿Qué entrenador dirigió al Manchester United durante 26 años?", o: ["Alex Ferguson", "Matt Busby", "Arsène Wenger", "Bobby Robson"] },
+      ],
+      200: [
+        { p: "¿Qué DT argentino dirige al Atlético de Madrid desde 2011?", o: ["Diego Simeone", "Mauricio Pochettino", "Marcelo Gallardo", "Gerardo Martino"] },
+        { p: "¿Qué DT italiano ganó la Champions con el Milan y con el Real Madrid?", o: ["Carlo Ancelotti", "Fabio Capello", "Arrigo Sacchi", "Marcello Lippi"] },
+        { p: "¿Quién dirigía al Liverpool campeón de la Champions 2019?", o: ["Jürgen Klopp", "Rafa Benítez", "Brendan Rodgers", "Arne Slot"] },
+      ],
+      300: [
+        { p: "¿Quién dirigió a River en la final de la Libertadores 2018 en Madrid?", o: ["Marcelo Gallardo", "Ramón Díaz", "Matías Almeyda", "Martín Demichelis"] },
+        { p: "¿Qué entrenador argentino es apodado \"El Loco\"?", o: ["Marcelo Bielsa", "Ricardo Gareca", "Jorge Sampaoli", "Eduardo Berizzo"] },
+        { p: "¿Quién dirigió a España campeona del Mundial 2010?", o: ["Vicente del Bosque", "Luis Aragonés", "Luis Enrique", "Julen Lopetegui"] },
+      ],
+      400: [
+        { p: "¿Qué DT ganó las Libertadores 2000, 2001 y 2003 con Boca?", o: ["Carlos Bianchi", "Miguel Ángel Russo", "Alfio Basile", "Óscar Tabárez"] },
+        { p: "¿Qué DT ganó tres Champions seguidas con el Real Madrid (2016-2018)?", o: ["Zinedine Zidane", "Carlo Ancelotti", "José Mourinho", "Rafa Benítez"] },
+        { p: "¿Quién dirigió a Francia campeona del Mundial 2018?", o: ["Didier Deschamps", "Laurent Blanc", "Raymond Domenech", "Aimé Jacquet"] },
+      ],
+      500: [
+        { p: "¿Qué DT llevó a Grecia a ganar la Eurocopa 2004?", o: ["Otto Rehhagel", "Fernando Santos", "Giovanni Trapattoni", "Guus Hiddink"] },
+        { p: "¿Quién dirigió a Alemania campeona del Mundial 2014?", o: ["Joachim Löw", "Jürgen Klinsmann", "Hansi Flick", "Franz Beckenbauer"] },
+        { p: "¿Qué DT llevó a Estudiantes a ganar la Libertadores 1968?", o: ["Osvaldo Zubeldía", "Carlos Bilardo", "Juan Carlos Lorenzo", "Alejandro Sabella"] },
+      ],
+    },
+  },
+  {
+    nombre: "Estadios",
+    icono: "🏟️",
+    preguntas: {
+      100: [
+        { p: "¿En qué ciudad está el Camp Nou?", o: ["Barcelona", "Madrid", "Valencia", "Sevilla"] },
+        { p: "¿En qué ciudad está el estadio Maracaná?", o: ["Río de Janeiro", "São Paulo", "Brasilia", "Belo Horizonte"] },
+        { p: "¿Cuál es el estadio del Manchester United?", o: ["Old Trafford", "Anfield", "Etihad Stadium", "Stamford Bridge"] },
+      ],
+      200: [
+        { p: "¿Cuál es el estadio del Liverpool?", o: ["Anfield", "Goodison Park", "Old Trafford", "Villa Park"] },
+        { p: "¿En qué estadio se jugó la final del Mundial 2022?", o: ["Estadio Lusail", "Estadio Al Bayt", "Estadio 974", "Estadio Khalifa"] },
+        { p: "¿Cómo se llama el estadio que comparten Milan e Inter?", o: ["San Siro", "Olímpico", "Delle Alpi", "Diego Armando Maradona"] },
+      ],
+      300: [
+        { p: "¿En qué estadio se jugó la final del Mundial 1978?", o: ["Monumental", "La Bombonera", "Gigante de Arroyito", "Estadio Mundialista de Mar del Plata"] },
+        { p: "¿En qué estadio se jugó la final River-Boca de la Libertadores 2018?", o: ["Santiago Bernabéu", "Camp Nou", "Metropolitano", "Wembley"] },
+        { p: "¿Cómo se llama el estadio del Atlético de Madrid?", o: ["Metropolitano", "Vicente Calderón", "Santiago Bernabéu", "Vallecas"] },
+      ],
+      400: [
+        { p: "¿En qué estadio se jugó la final del Mundial 1986?", o: ["Estadio Azteca", "Estadio Jalisco", "Estadio Cuauhtémoc", "Estadio Universitario"] },
+        { p: "¿Cuál es el estadio del Borussia Dortmund?", o: ["Signal Iduna Park", "Allianz Arena", "Veltins-Arena", "Volksparkstadion"] },
+        { p: "¿En qué estadio juega de local Rosario Central?", o: ["Gigante de Arroyito", "Marcelo Bielsa", "El Cilindro", "Brigadier López"] },
+      ],
+      500: [
+        { p: "¿En qué estadio se jugó la final del Mundial 2014?", o: ["Maracaná", "Arena Corinthians", "Mineirão", "Estadio Nacional de Brasilia"] },
+        { p: "¿En qué estadio se jugó la final del Mundial 1930?", o: ["Estadio Centenario", "Gran Parque Central", "Estadio Pocitos", "Monumental"] },
+        { p: "¿Cómo se llama el estadio de Independiente?", o: ["Libertadores de América", "Presidente Perón", "Tomás A. Ducó", "Pedro Bidegain"] },
+      ],
+    },
+  },
+  {
+    nombre: "Apodos",
+    icono: "🗣️",
+    preguntas: {
+      100: [
+        { p: "¿A quién apodan \"La Pulga\"?", o: ["Lionel Messi", "Sergio Agüero", "Paulo Dybala", "Javier Saviola"] },
+        { p: "¿A qué jugador se lo conoce como \"CR7\"?", o: ["Cristiano Ronaldo", "Ronaldo Nazário", "Ronaldinho", "Rafael Leão"] },
+        { p: "¿A qué arquero le dicen \"Dibu\"?", o: ["Emiliano Martínez", "Franco Armani", "Sergio Romero", "Gerónimo Rulli"] },
+      ],
+      200: [
+        { p: "¿A quién le dicen \"El Apache\"?", o: ["Carlos Tevez", "Ariel Ortega", "Juan Román Riquelme", "Sergio Agüero"] },
+        { p: "¿A quién le dicen \"El Fideo\"?", o: ["Ángel Di María", "Ezequiel Lavezzi", "Javier Pastore", "Rodrigo De Paul"] },
+        { p: "¿A quién le dicen \"El Kun\"?", o: ["Sergio Agüero", "Gonzalo Higuaín", "Carlos Tevez", "Lautaro Martínez"] },
+      ],
+      300: [
+        { p: "¿A quién le dicen \"El Titán\"?", o: ["Martín Palermo", "Gabriel Batistuta", "Hernán Crespo", "Rodrigo Palacio"] },
+        { p: "¿Qué ídolo uruguayo de River es apodado \"El Príncipe\"?", o: ["Enzo Francescoli", "Rodrigo Mora", "Rubén Paz", "Álvaro Recoba"] },
+        { p: "¿A qué delantero le dicen \"La Araña\"?", o: ["Julián Álvarez", "Lautaro Martínez", "Paulo Dybala", "Lucas Alario"] },
+      ],
+      400: [
+        { p: "¿A quién le dicen \"El Burrito\"?", o: ["Ariel Ortega", "Marcelo Gallardo", "Pablo Aimar", "Andrés D'Alessandro"] },
+        { p: "¿A qué goleador se lo conoce como \"Batigol\"?", o: ["Gabriel Batistuta", "Hernán Crespo", "Claudio Caniggia", "Abel Balbo"] },
+        { p: "¿A quién le dicen \"El Bichi\"?", o: ["Claudio Borghi", "Claudio Caniggia", "Diego Latorre", "Ramón Díaz"] },
+      ],
+      500: [
+        { p: "¿A qué jugador rosarino le decían \"El Trinche\"?", o: ["Tomás Carlovich", "Mario Kempes", "Marcelo Bielsa", "Ángel Di María"] },
+        { p: "¿A qué goleador de Argentina 78 se lo apodaba \"El Matador\"?", o: ["Mario Kempes", "Leopoldo Luque", "René Houseman", "Daniel Bertoni"] },
+        { p: "¿A quién se lo conocía como \"La Saeta Rubia\"?", o: ["Alfredo Di Stéfano", "Omar Sívori", "Adolfo Pedernera", "José Manuel Moreno"] },
+      ],
+    },
+  },
+  {
+    nombre: "Récords y Curiosidades",
+    icono: "📊",
+    preguntas: {
+      100: [
+        { p: "¿Cuántos jugadores tiene cada equipo en cancha al inicio de un partido?", o: ["11", "10", "12", "9"] },
+        { p: "¿Cuántos minutos dura un partido reglamentario (sin descuento)?", o: ["90", "80", "100", "120"] },
+        { p: "¿Qué color de tarjeta significa expulsión?", o: ["Roja", "Amarilla", "Verde", "Azul"] },
+      ],
+      200: [
+        { p: "¿Cada cuántos años se juega el Mundial?", o: ["4", "2", "3", "5"] },
+        { p: "¿A cuántos metros del arco se patea un penal?", o: ["11", "9", "12", "16,5"] },
+        { p: "¿Cómo se llama el sistema de video que revisa jugadas?", o: ["VAR", "GPS", "Ojo de Halcón", "TMO"] },
+      ],
+      300: [
+        { p: "¿En qué Mundial se usaron por primera vez las tarjetas amarilla y roja?", o: ["México 1970", "Inglaterra 1966", "Alemania 1974", "Argentina 1978"] },
+        { p: "¿Quién es el jugador con más partidos en la historia de los Mundiales?", o: ["Lionel Messi", "Lothar Matthäus", "Miroslav Klose", "Cristiano Ronaldo"] },
+        { p: "¿Qué selección ganó la Eurocopa 2016?", o: ["Portugal", "Francia", "Alemania", "España"] },
+      ],
+      400: [
+        { p: "¿Qué selección ganó sorpresivamente la Eurocopa 2004?", o: ["Grecia", "Portugal", "Dinamarca", "República Checa"] },
+        { p: "¿Qué jugador ganó más Mundiales como futbolista (3)?", o: ["Pelé", "Garrincha", "Cafú", "Diego Maradona"] },
+        { p: "¿Cómo terminó Brasil-Alemania en la semifinal del Mundial 2014?", o: ["1-7", "0-5", "2-6", "1-4"] },
+      ],
+      500: [
+        { p: "¿Qué selección ganó la primera Eurocopa, en 1960?", o: ["Unión Soviética", "Yugoslavia", "España", "Francia"] },
+        { p: "¿En qué año se fundó la FIFA?", o: ["1904", "1930", "1886", "1920"] },
+        { p: "¿Quién hizo el gol más rápido de la historia de los Mundiales (11 segundos)?", o: ["Hakan Şükür", "Clint Dempsey", "Bryan Robson", "Václav Mašek"] },
+      ],
+    },
+  },
+];

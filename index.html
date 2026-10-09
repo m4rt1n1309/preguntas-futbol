@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b3d2e">
+  <meta name="description" content="Juego de preguntas de fútbol para 2 jugadores">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+  <title>Preguntas de Fútbol</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <!-- Pantalla de inicio -->
+  <section id="inicio" class="pantalla activa">
+    <button class="btn-sonido flotante" aria-label="Activar o silenciar sonido">🔊</button>
+    <h1>⚽ Preguntas de Fútbol</h1>
+    <p class="sub">Juego para 2 jugadores. Elegí una categoría y respondé.<br>
+      En cada columna se empieza por <b>abajo</b> (x100) y se va subiendo.</p>
+    <div class="nombres">
+      <label>Jugador 1 <input id="nombre1" maxlength="16" value="Jugador 1"></label>
+      <label>Jugador 2 <input id="nombre2" maxlength="16" value="Jugador 2"></label>
+    </div>
+    <div class="opciones-juego">
+      <label><input type="checkbox" id="optRebote" checked> Rebote: si uno falla, el rival puede responder</label>
+      <label><input type="checkbox" id="optRestar"> Restar puntos al fallar</label>
+      <label>Categorías por partida (se sortean)
+        <select id="optCantidad">
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6" selected>6</option>
+        </select>
+      </label>
+      <label>Tiempo por pregunta
+        <select id="optTiempo">
+          <option value="0">Sin límite</option>
+          <option value="15">15 s</option>
+          <option value="30" selected>30 s</option>
+          <option value="45">45 s</option>
+        </select>
+      </label>
+    </div>
+    <button id="btnEmpezar" class="btn grande">Empezar</button>
+  </section>
+
+  <!-- Tablero -->
+  <section id="juego" class="pantalla">
+    <header class="marcador">
+      <div class="jugador" id="j0"><span class="nombre"></span><span class="puntos">0</span></div>
+      <div class="centro">
+        <div class="turno" id="turno"></div>
+        <button class="btn-sonido" aria-label="Activar o silenciar sonido">🔊</button>
+      </div>
+      <div class="jugador" id="j1"><span class="nombre"></span><span class="puntos">0</span></div>
+    </header>
+    <div id="tablero" class="tablero"></div>
+  </section>
+
+  <!-- Pregunta -->
+  <div id="modal" class="modal oculto">
+    <div class="caja">
+      <div class="cabecera">
+        <span id="mCategoria"></span>
+        <span id="mValor"></span>
+      </div>
+      <div id="mQuien" class="quien"></div>
+      <div id="mTimer" class="timer"><div class="barra"></div></div>
+      <h2 id="mPregunta"></h2>
+      <div id="mOpciones" class="opciones"></div>
+      <div id="mResultado" class="resultado"></div>
+      <button id="btnContinuar" class="btn oculto">Continuar</button>
+    </div>
+  </div>
+
+  <!-- Final -->
+  <section id="final" class="pantalla">
+    <h1 id="ganador"></h1>
+    <p id="resumen" class="sub"></p>
+    <button id="btnRevancha" class="btn grande">Revancha</button>
+    <button id="btnNuevo" class="btn">Cambiar jugadores</button>
+  </section>
+
+  <script src="sonidos.js"></script>
+  <script src="preguntas.js"></script>
+  <script src="juego.js"></script>
+</body>
+</html>
