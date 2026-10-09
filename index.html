@@ -3,20 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b3d2e">
+  <meta name="theme-color" content="#06121c">
   <meta name="description" content="Juego de preguntas de fútbol para 2 jugadores">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
   <title>Preguntas de Fútbol</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
   <!-- Pantalla de inicio -->
   <section id="inicio" class="pantalla activa">
     <button class="btn-sonido flotante" aria-label="Activar o silenciar sonido">🔊</button>
-    <h1>⚽ Preguntas de Fútbol</h1>
-    <p class="sub">Juego para 2 jugadores. En cada columna se empieza por <b>abajo</b> (x100) y se va subiendo.</p>
+    <div class="logo">
+      <div class="logo-pelota">⚽</div>
+      <h1><span>Preguntas de</span> Fútbol</h1>
+    </div>
+    <p class="sub">Duelo de 2 jugadores · En cada columna se empieza por <b>abajo</b> y se va subiendo</p>
 
     <!-- Elegir modo -->
     <div id="panelModo" class="panel activo">
@@ -94,12 +100,12 @@
   <!-- Tablero -->
   <section id="juego" class="pantalla">
     <header class="marcador">
-      <div class="jugador" id="j0"><span class="nombre"></span><span class="puntos">0</span></div>
+      <div class="jugador" id="j0"><span class="avatar"></span><div class="datos"><span class="nombre"></span><span class="puntos">0</span></div></div>
       <div class="centro">
         <div class="turno" id="turno"></div>
         <button class="btn-sonido" aria-label="Activar o silenciar sonido">🔊</button>
       </div>
-      <div class="jugador" id="j1"><span class="nombre"></span><span class="puntos">0</span></div>
+      <div class="jugador" id="j1"><span class="avatar"></span><div class="datos"><span class="nombre"></span><span class="puntos">0</span></div></div>
     </header>
     <div id="tablero" class="tablero"></div>
   </section>
@@ -122,6 +128,8 @@
 
   <!-- Final -->
   <section id="final" class="pantalla">
+    <canvas id="confeti"></canvas>
+    <div class="trofeo">🏆</div>
     <h1 id="ganador"></h1>
     <p id="resumen" class="sub"></p>
     <p id="esperaRevancha" class="estado-red oculto">Esperando que el anfitrión arranque la revancha...</p>

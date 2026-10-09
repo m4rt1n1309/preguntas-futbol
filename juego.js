@@ -189,7 +189,7 @@ function foto() {
     jugadores: estado.jugadores,
     turno: estado.turno,
     config: estado.config,
-    categorias: estado.categorias.map(({ nombre, icono }) => ({ nombre, icono })),
+    categorias: estado.categorias.map(({ nombre, corto, icono }) => ({ nombre, corto, icono })),
     tablero: estado.tablero.map((col) => col.map(({ valor, usada, ganador }) => ({ valor, usada, ganador }))),
     actual: a && {
       c: a.c, f: a.f, pregunta: a.pregunta, opciones: a.opciones, responde: a.responde,
@@ -237,8 +237,15 @@ function nombreConMarca(j) {
 function renderTablero() {
   estado.jugadores.forEach((j, i) => {
     const el = $("#j" + i);
+    el.querySelector(".avatar").textContent = (j.nombre.trim()[0] || "?").toUpperCase();
     el.querySelector(".nombre").textContent = nombreConMarca(i);
-    el.querySelector(".puntos").textContent = j.puntos;
+    const pts = el.querySelector(".puntos");
+    if (pts.textContent !== String(j.puntos)) {
+      pts.textContent = j.puntos;
+      pts.classList.remove("salto");
+      void pts.offsetWidth; // reinicia la animación
+      pts.classList.add("salto");
+    }
     el.classList.toggle("activo", estado.turno === i);
   });
   const miTurno = puedeActuar(estado.turno);
@@ -254,7 +261,9 @@ function renderTablero() {
   estado.categorias.forEach((cat) => {
     const h = document.createElement("div");
     h.className = "cat";
-    h.innerHTML = `<span class="ico">${cat.icono}</span><span class="nom">${cat.nombre}</span>`;
+    h.innerHTML = `<span class="ico">${cat.icono}</span><span class="nom">${cat.nombre}</span>` +
+      `<span class="nom-corto">${(cat.corto || cat.nombre).replaceAll("-", "&shy;")}</span>`;
+    h.title = cat.nombre;
     tablero.appendChild(h);
   });
 
@@ -268,7 +277,7 @@ function renderTablero() {
         btn.classList.add("usada", celda.ganador === null ? "nadie" : "g" + celda.ganador);
         btn.textContent = celda.ganador === null ? "—" : estado.jugadores[celda.ganador].nombre;
       } else {
-        btn.textContent = "x" + celda.valor;
+        btn.innerHTML = `<small>x</small>${celda.valor}`;
         if (!estaDisponible(c, f)) {
           btn.classList.add("bloqueada");
           btn.title = "Primero respondé las de abajo";
@@ -346,12 +355,50 @@ setInterval(pintarReloj, 200);
 
 function renderFinal() {
   const [a, b] = estado.jugadores;
-  $("#ganador").textContent =
-    a.puntos === b.puntos ? "🤝 ¡Empate!" : `🏆 ¡Ganó ${a.puntos > b.puntos ? a.nombre : b.nombre}!`;
+  const empate = a.puntos === b.puntos;
+  $(".trofeo").textContent = empate ? "🤝" : "🏆";
+  $("#ganador").textContent = empate ? "¡Empate!" : `¡Ganó ${a.puntos > b.puntos ? a.nombre : b.nombre}!`;
   $("#resumen").innerHTML = `${a.nombre}: <b>${a.puntos}</b> pts &nbsp;·&nbsp; ${b.nombre}: <b>${b.puntos}</b> pts`;
   $("#btnRevancha").classList.toggle("oculto", estado.modo === "invitado");
   $("#esperaRevancha").classList.toggle("oculto", estado.modo !== "invitado");
-  mostrarPantalla("final");
+  if (!$("#final").classList.contains("activa")) {
+    mostrarPantalla("final");
+    lanzarConfeti();
+  }
+}
+
+function lanzarConfeti() {
+  const canvas = $("#confeti");
+  const ctx = canvas.getContext("2d");
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  const colores = ["#f7c948", "#ff6b4a", "#38bdf8", "#22c55e", "#ffffff"];
+  const piezas = Array.from({ length: 160 }, () => ({
+    x: Math.random() * canvas.width,
+    y: -20 - Math.random() * canvas.height * 0.6,
+    w: 6 + Math.random() * 6,
+    h: 8 + Math.random() * 8,
+    vy: 2 + Math.random() * 3,
+    vx: -1.5 + Math.random() * 3,
+    giro: Math.random() * Math.PI,
+    vg: -0.15 + Math.random() * 0.3,
+    color: colores[Math.floor(Math.random() * colores.length)],
+  }));
+  const fin = Date.now() + 5000;
+  (function cuadro() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    piezas.forEach((p) => {
+      p.x += p.vx; p.y += p.vy; p.giro += p.vg;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.giro);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.giro * 2)));
+      ctx.restore();
+    });
+    if (Date.now() < fin && $("#final").classList.contains("activa")) requestAnimationFrame(cuadro);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  })();
 }
 
 function volverAlInicio() {

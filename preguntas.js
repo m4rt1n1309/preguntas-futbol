@@ -1,12 +1,14 @@
 // Banco de preguntas.
 // Cada categoría tiene preguntas por valor (100..500). En cada partida se sortean
 // las categorías y, para cada casilla, una de sus preguntas.
+// "corto" es el nombre que se muestra en pantallas chicas ("-" marca dónde se puede cortar la palabra).
 // La primera opción de "o" es SIEMPRE la correcta (se mezclan al mostrarse).
 const VALORES = [100, 200, 300, 400, 500];
 
 const CATEGORIAS = [
   {
     nombre: "Champions League",
+    corto: "Cham-pions",
     icono: "🏆",
     preguntas: {
       100: [
@@ -38,6 +40,7 @@ const CATEGORIAS = [
   },
   {
     nombre: "Mundial",
+    corto: "Mundial",
     icono: "🌍",
     preguntas: {
       100: [
@@ -69,6 +72,7 @@ const CATEGORIAS = [
   },
   {
     nombre: "Libertadores",
+    corto: "Liberta-dores",
     icono: "🏅",
     preguntas: {
       100: [
@@ -100,6 +104,7 @@ const CATEGORIAS = [
   },
   {
     nombre: "Ligas de Europa",
+    corto: "Europa",
     icono: "⚽",
     preguntas: {
       100: [
@@ -131,6 +136,7 @@ const CATEGORIAS = [
   },
   {
     nombre: "Leyendas",
+    corto: "Leyen-das",
     icono: "⭐",
     preguntas: {
       100: [
@@ -162,6 +168,7 @@ const CATEGORIAS = [
   },
   {
     nombre: "Fútbol Argentino",
+    corto: "Fútbol Arg.",
     icono: "🧉",
     preguntas: {
       100: [
@@ -193,6 +200,7 @@ const CATEGORIAS = [
   },
   {
     nombre: "Selección Argentina",
+    corto: "Selec-ción",
     icono: "💙",
     preguntas: {
       100: [
@@ -224,6 +232,7 @@ const CATEGORIAS = [
   },
   {
     nombre: "Copa América",
+    corto: "Copa América",
     icono: "🥇",
     preguntas: {
       100: [
@@ -255,6 +264,7 @@ const CATEGORIAS = [
   },
   {
     nombre: "Técnicos",
+    corto: "Técni-cos",
     icono: "📋",
     preguntas: {
       100: [
@@ -286,6 +296,7 @@ const CATEGORIAS = [
   },
   {
     nombre: "Estadios",
+    corto: "Esta-dios",
     icono: "🏟️",
     preguntas: {
       100: [
@@ -317,6 +328,7 @@ const CATEGORIAS = [
   },
   {
     nombre: "Apodos",
+    corto: "Apodos",
     icono: "🗣️",
     preguntas: {
       100: [
@@ -348,6 +360,7 @@ const CATEGORIAS = [
   },
   {
     nombre: "Récords y Curiosidades",
+    corto: "Récords",
     icono: "📊",
     preguntas: {
       100: [
