@@ -10,5 +10,10 @@ Juego de preguntas de fútbol para 2 jugadores, estilo tablero (x100 a x500).
 - Los jugadores se turnan para elegir; si aciertan suman los puntos de la casilla.
 - Opcional: rebote (si uno falla responde el rival), restar puntos al fallar y tiempo límite.
 
+## Modos de juego
+- **Mismo dispositivo:** los dos jugadores se turnan en el mismo celular o compu.
+- **Online:** uno toca "Crear sala" y comparte el código (o el link de invitación); el otro toca "Unirse".
+  Cada uno juega desde su dispositivo. Usa [PeerJS](https://peerjs.com/) (conexión directa entre los dos, gratis, sin servidor propio).
+
 ## Agregar preguntas
 Editar `preguntas.js`. La **primera opción** de cada pregunta es la correcta (el juego las mezcla al mostrarlas).

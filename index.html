@@ -16,13 +16,61 @@
   <section id="inicio" class="pantalla activa">
     <button class="btn-sonido flotante" aria-label="Activar o silenciar sonido">🔊</button>
     <h1>⚽ Preguntas de Fútbol</h1>
-    <p class="sub">Juego para 2 jugadores. Elegí una categoría y respondé.<br>
-      En cada columna se empieza por <b>abajo</b> (x100) y se va subiendo.</p>
-    <div class="nombres">
-      <label>Jugador 1 <input id="nombre1" maxlength="16" value="Jugador 1"></label>
-      <label>Jugador 2 <input id="nombre2" maxlength="16" value="Jugador 2"></label>
+    <p class="sub">Juego para 2 jugadores. En cada columna se empieza por <b>abajo</b> (x100) y se va subiendo.</p>
+
+    <!-- Elegir modo -->
+    <div id="panelModo" class="panel activo">
+      <button id="btnModoLocal" class="btn grande modo">🎮 Mismo dispositivo</button>
+      <button id="btnModoOnline" class="btn grande modo">🌐 Jugar online</button>
     </div>
-    <div class="opciones-juego">
+
+    <!-- Modo local -->
+    <div id="panelLocal" class="panel">
+      <div class="nombres">
+        <label>Jugador 1 <input id="nombre1" maxlength="16" value="Jugador 1"></label>
+        <label>Jugador 2 <input id="nombre2" maxlength="16" value="Jugador 2"></label>
+      </div>
+      <div class="slot-opciones"></div>
+      <button id="btnEmpezar" class="btn grande">Empezar</button>
+      <button class="btn secundario btn-volver">← Volver</button>
+    </div>
+
+    <!-- Online: crear o unirse -->
+    <div id="panelOnline" class="panel">
+      <div class="nombres">
+        <label>Tu nombre <input id="miNombre" maxlength="16" placeholder="Tu nombre"></label>
+      </div>
+      <p id="msgInvitacion" class="aviso-inline oculto"></p>
+      <button id="btnCrearSala" class="btn grande">Crear sala</button>
+      <div class="separador">o unite a una sala</div>
+      <div class="unirse">
+        <input id="codigoSala" maxlength="5" placeholder="CÓDIGO" autocapitalize="characters" autocomplete="off">
+        <button id="btnUnirse" class="btn">Unirse</button>
+      </div>
+      <p id="estadoOnline" class="estado-red"></p>
+      <button class="btn secundario btn-volver">← Volver</button>
+    </div>
+
+    <!-- Online: sala del anfitrión -->
+    <div id="panelSala" class="panel">
+      <p>Código de la sala</p>
+      <div id="codigoGrande" class="codigo-grande"></div>
+      <button id="btnCompartir" class="btn">📤 Invitar</button>
+      <p id="estadoSala" class="estado-red">Esperando rival...</p>
+      <div class="slot-opciones"></div>
+      <button id="btnEmpezarOnline" class="btn grande" disabled>Empezar</button>
+      <button class="btn secundario btn-salir">✖ Cerrar sala</button>
+    </div>
+
+    <!-- Online: invitado esperando -->
+    <div id="panelEspera" class="panel">
+      <p id="estadoEspera" class="estado-red"></p>
+      <div class="pelota-cargando">⚽</div>
+      <button class="btn secundario btn-salir">✖ Salir</button>
+    </div>
+
+    <!-- Opciones de partida (se mueve al panel activo) -->
+    <div id="opciones" class="opciones-juego">
       <label><input type="checkbox" id="optRebote" checked> Rebote: si uno falla, el rival puede responder</label>
       <label><input type="checkbox" id="optRestar"> Restar puntos al fallar</label>
       <label>Categorías por partida (se sortean)
@@ -41,7 +89,6 @@
         </select>
       </label>
     </div>
-    <button id="btnEmpezar" class="btn grande">Empezar</button>
   </section>
 
   <!-- Tablero -->
@@ -77,12 +124,23 @@
   <section id="final" class="pantalla">
     <h1 id="ganador"></h1>
     <p id="resumen" class="sub"></p>
+    <p id="esperaRevancha" class="estado-red oculto">Esperando que el anfitrión arranque la revancha...</p>
     <button id="btnRevancha" class="btn grande">Revancha</button>
-    <button id="btnNuevo" class="btn">Cambiar jugadores</button>
+    <button id="btnNuevo" class="btn">Volver al inicio</button>
   </section>
 
+  <!-- Aviso de desconexión -->
+  <div id="aviso" class="modal oculto">
+    <div class="caja centrada">
+      <h2 id="avisoTexto"></h2>
+      <button id="btnAvisoOk" class="btn">Volver al inicio</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
   <script src="sonidos.js"></script>
   <script src="preguntas.js"></script>
+  <script src="red.js"></script>
   <script src="juego.js"></script>
 </body>
 </html>
