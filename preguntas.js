@@ -193,7 +193,7 @@ const CATEGORIAS = [
   },
   {
     nombre: "Selección Argentina",
-    icono: "🇦🇷",
+    icono: "💙",
     preguntas: {
       100: [
         { p: "¿Quién es el máximo goleador histórico de la Selección Argentina?", o: ["Lionel Messi", "Gabriel Batistuta", "Sergio Agüero", "Hernán Crespo"] },
