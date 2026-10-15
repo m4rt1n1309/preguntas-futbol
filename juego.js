@@ -9,11 +9,11 @@ const estado = {
   modo: "local",     // "local" | "host" | "invitado"
   yo: null,          // online: mi índice en jugadores
   fase: "inicio",    // "inicio" | "tablero" | "final"
-  jugadores: [],     // [{ id, nombre, puntos, conectado }]
+  jugadores: [],     // [{ id, nombre, puntos, aciertos, conectado }]
   turno: 0,          // jugador que elige la próxima casilla
   categorias: [],    // categorías sorteadas para esta partida
   tablero: [],       // tablero[cat][fila] = { valor, pregunta, usada, ganador }
-  config: { rebote: true, restar: false, tiempo: 30, cantidad: 6 },
+  config: { rebote: true, restar: false, tiempo: 30, cantidad: 6, equipo: "" },
   actual: null,      // pregunta en curso
   vistas: new Set(), // preguntas ya jugadas (para no repetir en la revancha)
   sala: [],          // invitados en la sala de espera (solo anfitrión): [{ id, nombre }]
@@ -66,7 +66,19 @@ function leerConfig() {
     restar: $("#optRestar").checked,
     tiempo: Number($("#optTiempo").value),
     cantidad: Number($("#optCantidad").value),
+    equipo: $("#optTema").value, // "" = preguntas generales
   };
+}
+
+const buscarEquipo = (id) => EQUIPOS.find((e) => e.id === id);
+
+// Arma las columnas del tablero con las preguntas del equipo elegido (mismo formato que CATEGORIAS).
+function categoriasDeEquipo(id) {
+  const eq = buscarEquipo(id);
+  return CATS_EQUIPO.map(({ clave, nombre, corto, icono }) => ({
+    nombre, corto, icono,
+    preguntas: Object.fromEntries(VALORES.map((v, i) => [v, [].concat(eq[clave][i])])),
+  }));
 }
 
 // ---------- Lógica del juego (solo la ejecuta local o anfitrión) ----------
@@ -85,10 +97,12 @@ function elegirPregunta(lista) {
 
 // participantes: [{ id, nombre }]
 function nuevaPartida(participantes, config) {
-  estado.jugadores = participantes.map(({ id, nombre }) => ({ id, nombre, puntos: 0, conectado: true }));
+  estado.jugadores = participantes.map(({ id, nombre }) => ({ id, nombre, puntos: 0, aciertos: 0, conectado: true }));
   estado.config = config;
   estado.turno = Math.floor(Math.random() * estado.jugadores.length); // sorteo de quién empieza
-  estado.categorias = mezclar(CATEGORIAS).slice(0, config.cantidad);
+  estado.categorias = buscarEquipo(config.equipo)
+    ? categoriasDeEquipo(config.equipo)
+    : mezclar(CATEGORIAS).slice(0, config.cantidad);
   estado.tablero = estado.categorias.map((cat) =>
     VALORES.map((valor) => ({ valor, pregunta: elegirPregunta(cat.preguntas[valor]), usada: false, ganador: null }))
   );
@@ -153,6 +167,7 @@ function responder(texto, quien, motivo) {
 
   if (texto === a.correcta) {
     jugador.puntos += valor;
+    jugador.aciertos++;
     celda.ganador = a.responde;
     a.mensaje = `✅ ¡Correcto! +${valor} para ${jugador.nombre}`;
     return terminarPregunta("correcto");
@@ -255,6 +270,7 @@ function renderTodo() {
   }
   mostrarPantalla("juego");
   renderMarcador();
+  renderTema();
   renderTablero();
   renderPregunta();
 }
@@ -285,8 +301,19 @@ function renderMarcador() {
   const quien = estado.jugadores[estado.turno];
   const nombre = `<b style="color:${color(estado.turno)}">${escapar(quien.nombre)}</b>`;
   $("#turno").innerHTML = estado.modo === "local"
-    ? `Elige ${nombre}`
+    ? estado.jugadores.length === 1 ? "Elegí una casilla" : `Elige ${nombre}`
     : puedeActuar(estado.turno) ? `<b class="tu-turno">¡Te toca elegir!</b>` : `Elige ${nombre} <small>esperando...</small>`;
+}
+
+// Escudito con los colores del club, para el tablero y la pantalla final.
+function escudo(eq) {
+  return `<span class="escudo" style="--a:${eq.colores[0]};--b:${eq.colores[1]}"></span>`;
+}
+
+function renderTema() {
+  const eq = buscarEquipo(estado.config.equipo);
+  $("#temaPartida").classList.toggle("oculto", !eq);
+  if (eq) $("#temaPartida").innerHTML = `${escudo(eq)}<span>${escapar(eq.corto)}</span>`;
 }
 
 function renderTablero() {
@@ -404,8 +431,25 @@ function renderFinal() {
   const ganadores = orden.filter((j) => j.puntos === maximo);
   const empate = ganadores.length > 1;
 
-  $(".trofeo").textContent = empate ? "🤝" : "🏆";
-  $("#ganador").textContent = empate ? "¡Empate!" : `¡Ganó ${ganadores[0].nombre}!`;
+  const eq = buscarEquipo(estado.config.equipo);
+  const total = estado.tablero.length * VALORES.length;
+  const solo = estado.jugadores.length === 1;
+  $("#ranking").classList.toggle("oculto", solo);
+
+  if (solo) {
+    const j = estado.jugadores[0];
+    const nota = j.aciertos / total;
+    $(".trofeo").textContent = nota >= 0.8 ? "🏆" : nota >= 0.5 ? "👏" : "😅";
+    $("#ganador").textContent = `${j.puntos} puntos`;
+    const frase = eq
+      ? nota >= 0.8 ? `¡Sabés todo de ${eq.corto}! Hincha de verdad.` : nota >= 0.5 ? `Bien ahí, conocés a ${eq.corto}.` : `Hay que estudiar más la historia de ${eq.corto}...`
+      : nota >= 0.8 ? "¡Sos un crack!" : nota >= 0.5 ? "¡Buen partido!" : "La próxima sale mejor.";
+    $("#resumen").innerHTML = `Acertaste <b>${j.aciertos} de ${total}</b> preguntas. ${escapar(frase)}`;
+  } else {
+    $(".trofeo").textContent = empate ? "🤝" : "🏆";
+    $("#ganador").textContent = empate ? "¡Empate!" : `¡Ganó ${ganadores[0].nombre}!`;
+    $("#resumen").innerHTML = eq ? `${escudo(eq)} Preguntas de ${escapar(eq.nombre)}` : "";
+  }
 
   // Puesto compartido si empatan en puntos
   const medallas = ["🥇", "🥈", "🥉", "4°"];
@@ -415,7 +459,7 @@ function renderFinal() {
     return `<li style="--c:${color(j.i)}">
       <span class="medalla">${medallas[puesto]}</span>
       <span class="avatar">${escapar(inicial(j.nombre))}</span>
-      <span class="rk-nombre">${escapar(j.nombre)}${j.conectado ? "" : " <small>(se fue)</small>"}</span>
+      <span class="rk-nombre">${escapar(j.nombre)}${j.conectado ? "" : " <small>(se fue)</small>"}<small class="aciertos">${j.aciertos} ✓</small></span>
       <b>${j.puntos}</b>
     </li>`;
   }).join("");
@@ -675,7 +719,7 @@ $("#btnEmpezarOnline").onclick = empezarOnline;
 $("#btnContinuar").onclick = () => accion("continuar");
 $("#btnRevancha").onclick = () => {
   const siguen = estado.jugadores.filter((j) => j.conectado).map(({ id, nombre }) => ({ id, nombre }));
-  if (siguen.length < 2) return avisar("No quedan jugadores conectados para la revancha.");
+  if (siguen.length < (estado.modo === "local" ? 1 : 2)) return avisar("No quedan jugadores conectados para la revancha.");
   puntosPrevios = [];
   nuevaPartida(siguen, estado.config);
 };
@@ -692,7 +736,22 @@ pintarSonido();
 // En celulares el audio se habilita con el primer toque
 document.addEventListener("pointerdown", () => Sonido.desbloquear(), { once: true });
 
+// ---------- Elegir equipo ----------
+
+$("#listaEquipos").innerHTML = [...EQUIPOS]
+  .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
+  .map((e) => `<option value="${e.id}">${escapar(e.nombre)}</option>`).join("");
+
+function pintarTema() {
+  // Con equipo elegido el tablero siempre tiene sus 4 categorías: no se sortean.
+  $("#lblCantidad").classList.toggle("oculto", !!$("#optTema").value);
+}
+$("#optTema").onchange = () => { guardar("equipo", $("#optTema").value); pintarTema(); };
+
 // ---------- Arranque ----------
+
+if (buscarEquipo(leer("equipo"))) $("#optTema").value = leer("equipo");
+pintarTema();
 
 $("#miNombre").value = leer("nombre") || "";
 mostrarPanel("panelModo");

@@ -259,6 +259,7 @@ input::placeholder { color: #ffffff55; }
 }
 .marcador { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
 .jugadores { display: grid; grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr)); gap: 10px; }
+.jugadores[data-n="1"] { --n: 1; width: 100%; max-width: 340px; margin: 0 auto; }
 .jugadores[data-n="3"] { --n: 3; }
 .jugadores[data-n="4"] { --n: 4; }
 .barra-turno { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 34px; }
@@ -294,6 +295,16 @@ input::placeholder { color: #ffffff55; }
 .jugador.activo { border-color: var(--c); box-shadow: 0 0 0 1px var(--c), 0 0 26px color-mix(in srgb, var(--c) 45%, transparent); }
 .jugador.fuera { opacity: .35; filter: grayscale(.8); }
 .turno { font-size: .95rem; text-align: center; color: var(--texto-suave); }
+.tema-partida {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 5px;
+  background: rgba(0,0,0,.35); border: 1px solid var(--vidrio-borde); border-radius: 999px;
+  font-size: .8rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap;
+}
+.escudo {
+  display: inline-block; width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; vertical-align: middle;
+  background: linear-gradient(135deg, var(--a) 50%, var(--b) 50%);
+  box-shadow: 0 0 0 2px rgba(255,255,255,.25);
+}
 .turno b { font-size: 1.05rem; }
 .turno small, .quien small { opacity: .75; font-weight: 400; text-transform: none; }
 
@@ -477,6 +488,11 @@ input::placeholder { color: #ffffff55; }
 .ranking .avatar { width: 34px; height: 34px; font-size: 1.2rem; }
 .ranking .rk-nombre { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ranking .rk-nombre small { color: var(--texto-suave); font-weight: 400; }
+.ranking .aciertos { margin-left: 8px; }
+.resumen { color: var(--texto-suave); font-size: 1.05rem; margin: 4px auto 18px; max-width: 420px; }
+.resumen:empty { display: none; }
+.resumen b { color: var(--oro); }
+.resumen .escudo { margin-right: 4px; }
 .ranking b { font-family: var(--fuente-titulo); font-size: 1.8rem; font-weight: 400; color: var(--oro); }
 
 /* ===== Celular ===== */
@@ -499,6 +515,8 @@ input::placeholder { color: #ffffff55; }
   .jugadores[data-n="4"] .jugador .nombre { font-size: .65rem; max-width: 100%; }
   .jugadores[data-n="4"] .jugador .puntos { font-size: 1.35rem; }
   .barra-turno { min-height: 30px; }
+  .tema-partida { font-size: .65rem; padding: 3px 8px 3px 4px; }
+  .tema-partida .escudo { width: 16px; height: 16px; }
   .turno { font-size: .85rem; }
   .turno b { font-size: .95rem; }
   #nombresLocal label { flex-basis: 100%; }

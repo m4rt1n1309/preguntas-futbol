@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#06121c">
-  <meta name="description" content="Juego de preguntas de fútbol para 2 jugadores">
+  <meta name="description" content="Juego de preguntas de fútbol de 1 a 4 jugadores">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="estilos.css?v=6">
+  <link rel="stylesheet" href="estilos.css?v=7">
 </head>
 <body>
   <!-- Pantalla de inicio -->
@@ -22,7 +22,7 @@
       <div class="logo-pelota">⚽</div>
       <h1><span>Preguntas de</span> Fútbol</h1>
     </div>
-    <p class="sub">De 2 a 4 jugadores · En cada columna se empieza por <b>abajo</b> y se va subiendo</p>
+    <p class="sub">De 1 a 4 jugadores · Preguntas generales o de tu equipo · En cada columna se empieza por <b>abajo</b> y se va subiendo</p>
 
     <!-- Elegir modo -->
     <div id="panelModo" class="panel activo">
@@ -35,6 +35,7 @@
       <div class="cantidad-jugadores">
         <span>Jugadores</span>
         <div class="selector" id="optJugadores" role="radiogroup" aria-label="Cantidad de jugadores">
+          <button data-n="1">1</button>
           <button data-n="2" class="activo">2</button>
           <button data-n="3">3</button>
           <button data-n="4">4</button>
@@ -84,9 +85,15 @@
 
     <!-- Opciones de partida (se mueve al panel activo) -->
     <div id="opciones" class="opciones-juego">
+      <label>Preguntas
+        <select id="optTema">
+          <option value="">Fútbol en general</option>
+          <optgroup id="listaEquipos" label="De mi equipo (Primera División)"></optgroup>
+        </select>
+      </label>
       <label><input type="checkbox" id="optRebote" checked> Rebote: si uno falla, responde el siguiente</label>
       <label><input type="checkbox" id="optRestar"> Restar puntos al fallar</label>
-      <label>Categorías por partida (se sortean)
+      <label id="lblCantidad">Categorías por partida (se sortean)
         <select id="optCantidad">
           <option value="4">4</option>
           <option value="5">5</option>
@@ -109,6 +116,7 @@
     <header class="marcador">
       <div id="jugadores" class="jugadores"></div>
       <div class="barra-turno">
+        <div id="temaPartida" class="tema-partida oculto"></div>
         <div class="turno" id="turno"></div>
         <button class="btn-sonido" aria-label="Activar o silenciar sonido">🔊</button>
       </div>
@@ -137,6 +145,7 @@
     <canvas id="confeti"></canvas>
     <div class="trofeo">🏆</div>
     <h1 id="ganador"></h1>
+    <p id="resumen" class="resumen"></p>
     <ol id="ranking" class="ranking"></ol>
     <p id="esperaRevancha" class="estado-red oculto">Esperando que el anfitrión arranque la revancha...</p>
     <button id="btnRevancha" class="btn grande">Revancha</button>
@@ -152,9 +161,10 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
-  <script src="sonidos.js?v=6"></script>
-  <script src="preguntas.js?v=6"></script>
-  <script src="red.js?v=6"></script>
-  <script src="juego.js?v=6"></script>
+  <script src="sonidos.js?v=7"></script>
+  <script src="preguntas.js?v=7"></script>
+  <script src="equipos.js?v=7"></script>
+  <script src="red.js?v=7"></script>
+  <script src="juego.js?v=7"></script>
 </body>
 </html>
