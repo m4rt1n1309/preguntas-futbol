@@ -20,7 +20,7 @@ Juego de preguntas de fútbol para 1 a 4 jugadores, estilo tablero (x100 a x500)
   Si alguien se desconecta, la partida sigue con los demás.
 
 ## Agregar preguntas
-Editar `preguntas.js` (hay 5 preguntas por casilla, 450 en total). Las preguntas de cada equipo están en `equipos.js`
+Editar `preguntas.js` (hay 8 preguntas por casilla, 720 en total). Las preguntas de cada equipo están en `equipos.js`
 (2 por casilla, 40 por equipo, 1.200 en total): en cada partida se sortea una de cada casilla y en la revancha salen las otras. Las preguntas van subiendo de dificultad: x100 fáciles, x500 muy difíciles. La **primera opción** de cada pregunta es la correcta (el juego las mezcla al mostrarlas).
 
 Al cambiar archivos `.css` o `.js`, subir el número de `?v=` en `index.html` para que los navegadores no usen la versión vieja guardada.
